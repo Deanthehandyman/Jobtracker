@@ -14,5 +14,414 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f8fafc; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        .btn-shadow { box-shadow: 0 10px 15px -3px rgba(59, 13
+        .btn-shadow { box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3); }
+        .timer-glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .animate-pulse-slow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [view, setView] = useState('dashboard'); 
+            const [activeTab, setActiveTab] = useState('leads'); 
+            const [customers, setCustomers] = useState([]);
+            const [selectedCustomer, setSelectedCustomer] = useState(null);
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [currentTime, setCurrentTime] = useState(new Date());
+            
+            const logoInputRef = useRef(null);
+            const photoInputRef = useRef(null);
+
+            // --- Company Profile State ---
+            const [company, setCompany] = useState({
+                name: "Dean's Handyman Service LLC",
+                phone: "281-917-9914",
+                email: "dean@example.com",
+                address: "Pittsburg, Texas",
+                logo: "",
+                hourlyRate: 75,
+                payment: {
+                    square: "https://square.link/u/YOUR_LINK",
+                    paypal: "https://paypal.me/YOUR_ID",
+                    venmo: "https://venmo.com/YOUR_ID"
+                }
+            });
+
+            // --- New Customer Form State ---
+            const [formData, setFormData] = useState({
+                name: '', phone: '', email: '', address: '',
+                labor: '', materials: '', description: '',
+                status: 'Estimate', photos: [], timeLogs: []
+            });
+
+            // Timer Tick
+            useEffect(() => {
+                const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+                return () => clearInterval(interval);
+            }, []);
+
+            // Load Data
+            useEffect(() => {
+                const savedData = localStorage.getItem('contractor_pro_data_v2');
+                const savedCompany = localStorage.getItem('contractor_pro_company_v2');
+                if (savedData) setCustomers(JSON.parse(savedData));
+                if (savedCompany) setCompany(JSON.parse(savedCompany));
+            }, []);
+
+            const saveAll = (newCustomers, newCompany) => {
+                if(newCustomers) {
+                    setCustomers(newCustomers);
+                    localStorage.setItem('contractor_pro_data_v2', JSON.stringify(newCustomers));
+                }
+                if(newCompany) {
+                    setCompany(newCompany);
+                    localStorage.setItem('contractor_pro_company_v2', JSON.stringify(newCompany));
+                }
+            };
+
+            // --- Time Tracking Functions ---
+            const clockIn = (id) => {
+                const updated = customers.map(c => {
+                    if(c.id === id) {
+                        return { ...c, isClockedIn: true, lastStartTime: new Date().toISOString() };
+                    }
+                    return c;
+                });
+                saveAll(updated);
+            };
+
+            const clockOut = (id) => {
+                const updated = customers.map(c => {
+                    if(c.id === id && c.isClockedIn) {
+                        const endTime = new Date();
+                        const startTime = new Date(c.lastStartTime);
+                        const durationMs = endTime - startTime;
+                        const newLog = {
+                            start: c.lastStartTime,
+                            end: endTime.toISOString(),
+                            durationMs
+                        };
+                        const logs = [...(c.timeLogs || []), newLog];
+                        
+                        // Recalculate labor if using hourly tracking
+                        const totalHours = logs.reduce((acc, log) => acc + (log.durationMs / 3600000), 0);
+                        const newLabor = (totalHours * company.hourlyRate).toFixed(2);
+
+                        return { 
+                            ...c, 
+                            isClockedIn: false, 
+                            timeLogs: logs, 
+                            lastStartTime: null,
+                            labor: newLabor,
+                            total: parseFloat(newLabor) + parseFloat(c.materials)
+                        };
+                    }
+                    return c;
+                });
+                saveAll(updated);
+            };
+
+            const formatDuration = (ms) => {
+                const seconds = Math.floor((ms / 1000) % 60);
+                const minutes = Math.floor((ms / (1000 * 60)) % 60);
+                const hours = Math.floor(ms / (1000 * 60 * 60));
+                return `${hours}h ${minutes}m ${seconds}s`;
+            };
+
+            const getTotalTime = (customer) => {
+                let totalMs = (customer.timeLogs || []).reduce((acc, log) => acc + log.durationMs, 0);
+                if (customer.isClockedIn) {
+                    totalMs += (new Date() - new Date(customer.lastStartTime));
+                }
+                return totalMs;
+            };
+
+            // --- Handlers ---
+            const handleLogoUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => saveAll(null, { ...company, logo: reader.result });
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const handleJobPhotoUpload = (e, id = null) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        if(id) {
+                            const updated = customers.map(c => c.id === id ? { ...c, photos: [...(c.photos || []), reader.result] } : c);
+                            saveAll(updated);
+                            if(selectedCustomer?.id === id) setSelectedCustomer({...selectedCustomer, photos: [...(selectedCustomer.photos || []), reader.result]});
+                        } else {
+                            setFormData(prev => ({ ...prev, photos: [...prev.photos, reader.result] }));
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            const handleCreateLead = (e) => {
+                e.preventDefault();
+                const labor = parseFloat(formData.labor) || 0;
+                const materials = parseFloat(formData.materials) || 0;
+                const newLead = {
+                    ...formData,
+                    id: Date.now().toString(),
+                    labor, materials, total: labor + materials,
+                    createdAt: new Date().toISOString(),
+                    timeLogs: [],
+                    isClockedIn: false
+                };
+                saveAll([newLead, ...customers]);
+                setIsModalOpen(false);
+                setFormData({ name: '', phone: '', email: '', address: '', labor: '', materials: '', description: '', status: 'Estimate', photos: [], timeLogs: [] });
+            };
+
+            const sendDoc = (customer, mode) => {
+                const isEst = customer.status === 'Estimate';
+                const hours = (getTotalTime(customer) / 3600000).toFixed(2);
+                const body = `${company.name}\n${isEst ? 'ESTIMATE' : 'INVOICE'}\nTotal: $${customer.total}\nHours Worked: ${hours}\nWork: ${customer.description}`;
+                const url = mode === 'email' 
+                    ? `mailto:${customer.email}?subject=${isEst ? 'Estimate' : 'Invoice'} from ${company.name}&body=${encodeURIComponent(body)}`
+                    : `sms:${customer.phone}?body=${encodeURIComponent(body)}`;
+                window.location.href = url;
+            };
+
+            // --- Views ---
+
+            const SettingsView = () => (
+                <div className="p-8 pb-40 animate-in fade-in">
+                    <button onClick={() => setView('dashboard')} className="mb-6 text-slate-400 font-bold text-xs"><i className="fa-solid fa-chevron-left mr-2"></i> BACK</button>
+                    <h2 className="text-3xl font-extrabold mb-8 tracking-tighter">Company Setup</h2>
+                    <div className="bg-white p-8 rounded-[3rem] shadow-sm border space-y-6">
+                        <div className="flex flex-col items-center">
+                            <div className="h-24 w-24 bg-slate-50 rounded-3xl mb-4 overflow-hidden border-2 border-dashed border-slate-200 flex items-center justify-center">
+                                {company.logo ? <img src={company.logo} className="h-full w-full object-contain p-2" /> : <i className="fa-solid fa-image text-slate-200 text-2xl"></i>}
+                            </div>
+                            <button onClick={() => logoInputRef.current.click()} className="text-blue-600 font-bold text-[10px] uppercase tracking-widest">Update Logo</button>
+                            <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} />
+                        </div>
+                        <input placeholder="Company Name" className="w-full p-5 bg-slate-50 rounded-2xl font-bold border-0" value={company.name} onChange={e => saveAll(null, {...company, name: e.target.value})} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <input placeholder="Hourly Rate ($)" type="number" className="p-5 bg-slate-50 rounded-2xl font-bold border-0" value={company.hourlyRate} onChange={e => saveAll(null, {...company, hourlyRate: e.target.value})} />
+                            <input placeholder="Phone" className="p-5 bg-slate-50 rounded-2xl font-bold border-0" value={company.phone} onChange={e => saveAll(null, {...company, phone: e.target.value})} />
+                        </div>
+                        <input placeholder="Business Email" className="w-full p-5 bg-slate-50 rounded-2xl font-bold border-0" value={company.email} onChange={e => saveAll(null, {...company, email: e.target.value})} />
+                        <input placeholder="Payment Link (Square/PayPal)" className="w-full p-5 bg-slate-50 rounded-2xl font-bold border-0" value={company.payment.square} onChange={e => saveAll(null, {...company, payment: {...company.payment, square: e.target.value}})} />
+                    </div>
+                </div>
+            );
+
+            const DocumentView = ({ customer }) => {
+                const totalTimeMs = getTotalTime(customer);
+                return (
+                    <div className="bg-white min-h-screen p-8 pb-40 animate-in slide-in-from-right">
+                        <button onClick={() => setView('dashboard')} className="mb-8 text-slate-400 font-bold text-xs"><i className="fa-solid fa-chevron-left mr-2"></i> BACK</button>
+                        
+                        <div className="flex justify-between items-start mb-12 border-t-8 border-slate-900 pt-8">
+                            <div>
+                                {company.logo && <img src={company.logo} className="h-12 mb-4 object-contain" />}
+                                <h1 className="text-xl font-extrabold uppercase leading-none tracking-tight">{company.name}</h1>
+                                <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{company.phone} • {company.location}</p>
+                            </div>
+                            <div className="text-right">
+                                <h2 className="text-4xl font-black text-slate-100 uppercase leading-none">{customer.status === 'Paid' ? 'Invoice' : 'Estimate'}</h2>
+                                <p className="text-[9px] font-bold text-slate-400 mt-2 italic">{new Date(customer.createdAt).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8 mb-10 pb-10 border-b">
+                            <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Customer</p>
+                                <p className="text-lg font-bold">{customer.name}</p>
+                                <p className="text-xs text-slate-500">{customer.address}</p>
+                            </div>
+                            <div className="bg-slate-50 p-6 rounded-3xl">
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Details</p>
+                                <p className="text-xs font-medium leading-relaxed">{customer.description}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 mb-10">
+                            <div className="flex justify-between text-sm font-bold border-b border-slate-50 pb-4">
+                                <div className="flex flex-col">
+                                    <span className="text-slate-400 uppercase text-[9px]">Labor ({ (totalTimeMs / 3600000).toFixed(2) } hrs)</span>
+                                    <span className="text-[10px] text-slate-300 font-medium tracking-tight">Rate: ${company.hourlyRate}/hr</span>
+                                </div>
+                                <span>${parseFloat(customer.labor).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-bold border-b border-slate-50 pb-4">
+                                <span className="text-slate-400 uppercase text-[9px]">Materials</span>
+                                <span>${parseFloat(customer.materials).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-4xl font-black pt-6 text-slate-900">
+                                <span>TOTAL</span>
+                                <span className="text-blue-600">${parseFloat(customer.total).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <div className="mb-10">
+                            <p className="text-[9px] font-black text-slate-400 uppercase mb-4">Work Gallery</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {customer.photos?.map((p, i) => <img key={i} src={p} className="h-40 w-full object-cover rounded-2xl border" />)}
+                                <button onClick={() => photoInputRef.current.click()} className="h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center text-slate-300 gap-2">
+                                    <i className="fa-solid fa-plus"></i><span className="text-[10px] font-bold uppercase">Add Photo</span>
+                                </button>
+                                <input type="file" ref={photoInputRef} className="hidden" multiple accept="image/*" onChange={(e) => handleJobPhotoUpload(e, customer.id)} />
+                            </div>
+                        </div>
+
+                        <div className="fixed bottom-8 left-6 right-6 flex gap-3">
+                            <button onClick={() => sendDoc(customer, 'email')} className="flex-1 bg-slate-900 text-white py-5 rounded-3xl font-black text-xs uppercase shadow-xl">EMAIL</button>
+                            <button onClick={() => sendDoc(customer, 'sms')} className="flex-1 bg-blue-600 text-white py-5 rounded-3xl font-black text-xs uppercase shadow-xl btn-shadow">TEXT</button>
+                        </div>
+                    </div>
+                );
+            };
+
+            if (view === 'settings') return <SettingsView />;
+            if (view === 'document') return <DocumentView customer={selectedCustomer} />;
+
+            return (
+                <div className="min-h-screen pb-40">
+                    <header className="bg-slate-900 text-white p-12 rounded-b-[4.5rem] shadow-2xl relative overflow-hidden">
+                        <div className="flex justify-between items-start mb-10 relative z-10">
+                            <div>
+                                {company.logo ? <img src={company.logo} className="h-10 mb-4 object-contain brightness-0 invert" /> : <div className="h-10 w-10 bg-blue-600 rounded-xl mb-4 flex items-center justify-center"><i className="fa-solid fa-bolt"></i></div>}
+                                <h1 className="text-xl font-extrabold italic uppercase tracking-tighter leading-none">{company.name}</h1>
+                                <p className="text-[9px] font-bold text-blue-400 uppercase mt-1 tracking-widest">{company.location}</p>
+                            </div>
+                            <button onClick={() => setView('settings')} className="bg-white/10 h-12 w-12 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all"><i className="fa-solid fa-gear"></i></button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 relative z-10">
+                            <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 backdrop-blur-md">
+                                <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Open Leads</p>
+                                <p className="text-3xl font-black">{customers.filter(c => c.status === 'Estimate').length}</p>
+                            </div>
+                            <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 backdrop-blur-md">
+                                <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Active</p>
+                                <p className="text-3xl font-black text-blue-400">{customers.filter(c => c.status === 'Active').length}</p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="px-6 -mt-10 relative z-20">
+                        <div className="bg-white p-2 rounded-[3rem] shadow-xl flex gap-1 border">
+                            {['leads', 'active', 'paid'].map(t => (
+                                <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-4 rounded-[2.5rem] font-extrabold text-[10px] uppercase transition-all ${activeTab === t ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400'}`}>
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <main className="px-6 mt-12 space-y-6">
+                        {customers.filter(c => {
+                            if (activeTab === 'leads') return c.status === 'Estimate';
+                            if (activeTab === 'active') return c.status === 'Active';
+                            return c.status === 'Paid';
+                        }).map(c => (
+                            <div key={c.id} className="bg-white p-8 rounded-[3.5rem] border shadow-sm relative overflow-hidden">
+                                {c.isClockedIn && <div className="absolute top-0 right-0 left-0 h-1 bg-blue-500 animate-pulse"></div>}
+                                
+                                <div className="flex justify-between items-start mb-6">
+                                    <div>
+                                        <h3 className="text-xl font-extrabold text-slate-900 leading-none mb-1">{c.name}</h3>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{c.address || 'Field Visit'}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-2xl font-black text-blue-600 tracking-tighter">${parseFloat(c.total).toFixed(0)}</p>
+                                        {activeTab === 'active' && (
+                                            <p className={`text-[9px] font-black mt-1 uppercase ${c.isClockedIn ? 'text-blue-500 animate-pulse-slow' : 'text-slate-300'}`}>
+                                                {formatDuration(getTotalTime(c))}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                <div className="flex gap-2">
+                                    <button onClick={() => { setSelectedCustomer(c); setView('document'); }} className="flex-1 bg-slate-50 text-slate-700 py-5 rounded-[2rem] font-black text-[9px] uppercase">VIEW DOC</button>
+                                    
+                                    {c.status === 'Estimate' && (
+                                        <button onClick={() => saveAll(customers.map(cust => cust.id === c.id ? {...cust, status: 'Active'} : cust))} className="flex-1 bg-slate-900 text-white py-5 rounded-[2rem] font-black text-[9px] uppercase">START JOB</button>
+                                    )}
+
+                                    {c.status === 'Active' && (
+                                        <>
+                                            {c.isClockedIn ? (
+                                                <button onClick={() => clockOut(c.id)} className="flex-1 bg-red-500 text-white py-5 rounded-[2rem] font-black text-[9px] uppercase flex items-center justify-center gap-2">CLOCK OUT</button>
+                                            ) : (
+                                                <button onClick={() => clockIn(c.id)} className="flex-1 bg-blue-600 text-white py-5 rounded-[2rem] font-black text-[9px] uppercase flex items-center justify-center gap-2">CLOCK IN</button>
+                                            )}
+                                            {!c.isClockedIn && (
+                                                <button onClick={() => changeStatus(c.id, 'Paid')} className="p-5 bg-green-500 text-white rounded-[2rem]"><i className="fa-solid fa-check"></i></button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </main>
+
+                    <button onClick={() => setIsModalOpen(true)} className="fixed bottom-10 right-8 bg-blue-600 text-white h-20 w-20 rounded-[2.5rem] shadow-2xl flex items-center justify-center z-50 border-4 border-white active:scale-95 transition-all btn-shadow">
+                        <i className="fa-solid fa-plus text-3xl"></i>
+                    </button>
+
+                    {isModalOpen && (
+                        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[100] flex items-end justify-center p-4">
+                            <div className="bg-white w-full max-w-xl rounded-[4rem] p-10 shadow-2xl overflow-y-auto max-h-[92vh] animate-in slide-in-from-bottom duration-300">
+                                <div className="flex justify-between items-center mb-10">
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter">New Lead</h2>
+                                    <button onClick={() => setIsModalOpen(false)} className="bg-slate-100 p-3 rounded-full text-slate-400"><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <form onSubmit={handleCreateLead} className="space-y-6">
+                                    <input required placeholder="Client Name" className="w-full p-6 bg-slate-50 rounded-[2rem] font-bold border-0" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input required placeholder="Phone" className="p-6 bg-slate-50 rounded-[2rem] font-bold border-0" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                                        <input required placeholder="Email" type="email" className="p-6 bg-slate-50 rounded-[2rem] font-bold border-0" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                                    </div>
+                                    <input placeholder="Service Address" className="w-full p-6 bg-slate-50 rounded-[2rem] font-bold border-0" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                                    <div className="grid grid-cols-2 gap-4 border-t pt-8">
+                                        <input type="number" placeholder="Est Labor $" className="p-6 bg-slate-100 rounded-[2rem] font-black text-blue-600 border-0" value={formData.labor} onChange={e => setFormData({...formData, labor: e.target.value})} />
+                                        <input type="number" placeholder="Materials $" className="p-6 bg-slate-100 rounded-[2rem] font-black text-blue-600 border-0" value={formData.materials} onChange={e => setFormData({...formData, materials: e.target.value})} />
+                                    </div>
+                                    <textarea rows="3" placeholder="Description..." className="w-full p-6 bg-slate-50 rounded-[2rem] font-bold border-0" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                                    
+                                    <div className="space-y-4">
+                                        <p className="text-[9px] font-black text-slate-400 ml-5 uppercase tracking-widest">Lead Photos</p>
+                                        <div className="flex gap-3 flex-wrap">
+                                            {formData.photos.map((p, i) => <img key={i} src={p} className="h-16 w-16 object-cover rounded-[1.2rem] border shadow-sm" />)}
+                                            <button type="button" onClick={() => photoInputRef.current.click()} className="h-16 w-16 border-2 border-dashed rounded-[1.2rem] flex items-center justify-center text-slate-200"><i className="fa-solid fa-camera"></i></button>
+                                            <input type="file" ref={photoInputRef} className="hidden" multiple accept="image/*" onChange={(e) => handleJobPhotoUpload(e)} />
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-900 p-10 rounded-[4rem] text-center text-white">
+                                        <p className="text-[9px] text-blue-400 font-black uppercase mb-1 opacity-70 tracking-widest">Estimate Total</p>
+                                        <p className="text-5xl font-black">${((parseFloat(formData.labor) || 0) + (parseFloat(formData.materials) || 0)).toFixed(2)}</p>
+                                    </div>
+
+                                    <button type="submit" className="w-full bg-blue-600 text-white py-7 rounded-[2.5rem] font-black text-xl uppercase tracking-widest btn-shadow active:scale-95 transition-all">Save & Generate</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
 
