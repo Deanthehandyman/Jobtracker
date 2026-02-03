@@ -9,546 +9,308 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            -webkit-tap-highlight-color: transparent; 
-            background-color: #f8fafc;
-            overscroll-behavior: none;
-        }
-        input, textarea, select { font-size: 16px !important; } 
-        .animate-in { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; overscroll-behavior: none; }
+        input, textarea { font-size: 16px !important; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect } = React;
 
-        const SettingsView = ({ company, onSave, onBack }) => {
-            const [localCompany, setLocalCompany] = useState({...company});
-            const fileRef = useRef(null);
+        const ErrorBoundary = ({ children }) => {
+            const [hasError, setHasError] = useState(false);
+            useEffect(() => {
+                const handleError = (e) => {
+                    console.error("Global error:", e);
+                    setHasError(true);
+                };
+                window.addEventListener('error', handleError);
+                return () => window.removeEventListener('error', handleError);
+            }, []);
+            if (hasError) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6 text-center">
+                        <div>
+                            <i className="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-6"></i>
+                            <h2 className="text-2xl font-bold text-slate-800 mb-4">Something went wrong</h2>
+                            <p className="text-slate-600 mb-6">The app encountered an error. Try refreshing the page.</p>
+                            <button onClick={() => { setHasError(false); window.location.reload(); }} className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700">
+                                Refresh App
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+            return children;
+        };
+
+        const Settings = ({ company, setCompany, onBack }) => {
+            const [local, setLocal] = useState({ ...company });
+
+            const save = () => {
+                console.log("Saving company:", local);
+                setCompany(local);
+                onBack();
+            };
 
             return (
-                <div className="p-6 pb-32 animate-in max-w-xl mx-auto">
+                <div className="p-6 max-w-2xl mx-auto fade-in">
                     <div className="flex justify-between items-center mb-8">
-                        <button onClick={onBack} className="text-slate-500 hover:text-slate-700 font-semibold text-sm flex items-center">
-                            <i className="fa-solid fa-arrow-left mr-2"></i> Back to Dashboard
+                        <button onClick={onBack} className="text-slate-600 hover:text-slate-800 font-medium flex items-center">
+                            <i className="fa-solid fa-arrow-left mr-2"></i> Back
                         </button>
-                        <button onClick={() => onSave(localCompany)} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-md transition">
-                            Save Changes
+                        <button onClick={save} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700">
+                            Save Profile
                         </button>
                     </div>
-                    <h2 className="text-4xl font-extrabold mb-10 text-slate-900">Business Profile</h2>
-                    <div className="space-y-8">
-                        <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-md flex flex-col items-center">
-                            <div className="h-32 w-32 bg-slate-100 rounded-2xl mb-6 overflow-hidden border-4 border-dashed border-slate-300 flex items-center justify-center">
-                                {localCompany.logo ? <img src={localCompany.logo} className="h-full w-full object-contain p-4" /> : <i className="fa-solid fa-building text-slate-300 text-5xl"></i>}
-                            </div>
-                            <button onClick={() => fileRef.current.click()} className="text-blue-600 font-semibold hover:text-blue-800 text-sm">Upload Logo</button>
-                            <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={(e) => {
-                                const file = e.target.files[0];
-                                if(file){
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => setLocalCompany({...localCompany, logo: reader.result});
-                                    reader.readAsDataURL(file);
-                                }
-                            }} />
+                    <h1 className="text-3xl font-extrabold mb-10">Business Settings</h1>
+                    <div className="space-y-8 bg-white p-8 rounded-3xl shadow border border-slate-200">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Business Name</label>
+                            <input value={local.name} onChange={e => setLocal({...local, name: e.target.value})} className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Dean's Handyman TX" />
                         </div>
-
-                        <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-md space-y-6">
-                            <h3 className="text-xl font-bold text-slate-800">Company Details</h3>
-                            <input placeholder="Business Name (e.g., Dean's Handyman)" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.name} onChange={e => setLocalCompany({...localCompany, name: e.target.value})} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <input placeholder="Hourly Rate ($)" type="number" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.hourlyRate} onChange={e => setLocalCompany({...localCompany, hourlyRate: e.target.value})} />
-                                <input placeholder="Phone Number" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.phone} onChange={e => setLocalCompany({...localCompany, phone: e.target.value})} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Hourly Rate ($)</label>
+                                <input type="number" value={local.hourlyRate} onChange={e => setLocal({...local, hourlyRate: e.target.value})} className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
                             </div>
-                            <input placeholder="Email Address" type="email" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.email} onChange={e => setLocalCompany({...localCompany, email: e.target.value})} />
-                            <input placeholder="Location (e.g., Dallas, TX)" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.address} onChange={e => setLocalCompany({...localCompany, address: e.target.value})} />
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Phone</label>
+                                <input value={local.phone} onChange={e => setLocal({...local, phone: e.target.value})} className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                            </div>
                         </div>
-
-                        <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-md space-y-6">
-                            <h3 className="text-xl font-bold text-slate-800">Payment Links</h3>
-                            <input placeholder="Venmo Link" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium text-sm" value={localCompany.paymentLinks.venmo} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, venmo: e.target.value}})} />
-                            <input placeholder="PayPal Link" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium text-sm" value={localCompany.paymentLinks.paypal} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, paypal: e.target.value}})} />
-                            <input placeholder="Cash App Link" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium text-sm" value={localCompany.paymentLinks.cashapp} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, cashapp: e.target.value}})} />
-                            <input placeholder="Square Link" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium text-sm" value={localCompany.paymentLinks.square} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, square: e.target.value}})} />
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                            <input type="email" value={local.email} onChange={e => setLocal({...local, email: e.target.value})} className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Address / City</label>
+                            <input value={local.address} onChange={e => setLocal({...local, address: e.target.value})} className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
                         </div>
                     </div>
                 </div>
             );
         };
 
-        function App() {
+        function MainApp() {
             const [view, setView] = useState('dashboard');
-            const [activeTab, setActiveTab] = useState('leads');
-            const [searchTerm, setSearchTerm] = useState('');
+            const [tab, setTab] = useState('estimates');
             const [customers, setCustomers] = useState([]);
-            const [selectedId, setSelectedId] = useState(null);
-            const [isEditing, setIsEditing] = useState(false);
+            const [company, setCompany] = useState({ name: "Dean's Handyman TX", hourlyRate: 125, phone: "", email: "", address: "Dallas, TX", paymentLinks: {} });
+            const [selected, setSelected] = useState(null);
+            const [form, setForm] = useState({ name:"", phone:"", email:"", address:"", hours:"", labor:"", materials:"", description:"", photos:[] });
             const [editingId, setEditingId] = useState(null);
 
-            const [company, setCompany] = useState({
-                name: "Dean's Handyman TX",
-                phone: "",
-                email: "",
-                address: "Dallas, TX",
-                logo: "",
-                hourlyRate: 125,
-                paymentLinks: { 
-                    venmo: "",
-                    paypal: "",
-                    cashapp: "",
-                    square: ""
-                }
-            });
-
-            const [form, setForm] = useState({
-                name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: []
-            });
-
             useEffect(() => {
-                const savedCustomers = localStorage.getItem('jobTracker_customers');
-                const savedCompany = localStorage.getItem('jobTracker_company');
-                if (savedCustomers) setCustomers(JSON.parse(savedCustomers));
-                if (savedCompany) setCompany(JSON.parse(savedCompany));
+                try {
+                    const saved = localStorage.getItem('deans_jobs_v1');
+                    if (saved) setCustomers(JSON.parse(saved));
+                    const comp = localStorage.getItem('deans_company_v1');
+                    if (comp) setCompany(JSON.parse(comp));
+                } catch (e) {
+                    console.error("Load error:", e);
+                }
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('jobTracker_customers', JSON.stringify(customers));
+                try {
+                    localStorage.setItem('deans_jobs_v1', JSON.stringify(customers));
+                } catch (e) { console.error("Save jobs error:", e); }
             }, [customers]);
 
             useEffect(() => {
-                localStorage.setItem('jobTracker_company', JSON.stringify(company));
+                try {
+                    localStorage.setItem('deans_company_v1', JSON.stringify(company));
+                } catch (e) { console.error("Save company error:", e); }
             }, [company]);
 
-            useEffect(() => {
-                const h = parseFloat(form.hours) || 0;
-                if (h > 0 && company.hourlyRate) {
-                    const calcLabor = h * parseFloat(company.hourlyRate);
-                    setForm(prev => ({ ...prev, labor: calcLabor.toFixed(2) }));
-                }
-            }, [form.hours, company.hourlyRate]);
-
-            const handlePhotoChange = (e) => {
-                const files = Array.from(e.target.files);
-                Promise.all(files.map(file => {
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result);
-                        reader.readAsDataURL(file);
-                    });
-                })).then(urls => {
-                    setForm(prev => ({ ...prev, photos: [...prev.photos, ...urls] }));
-                });
-            };
-
-            const handleSaveJob = (e) => {
+            const saveJob = (e) => {
                 e.preventDefault();
-                const hoursVal = parseFloat(form.hours) || 0;
-                const laborVal = parseFloat(form.labor) || 0;
-                const matVal = parseFloat(form.materials) || 0;
-                const newJob = {
+                console.log("Saving job:", form);
+                const hours = Number(form.hours) || 0;
+                const labor = hours > 0 ? hours * Number(company.hourlyRate || 125) : Number(form.labor) || 0;
+                const materials = Number(form.materials) || 0;
+                const job = {
                     ...form,
-                    id: isEditing ? editingId : Date.now().toString(),
-                    hours: hoursVal,
-                    labor: laborVal,
-                    materials: matVal,
-                    total: laborVal + matVal,
-                    status: isEditing ? customers.find(c => c.id === editingId)?.status || 'Estimate' : 'Estimate',
-                    createdAt: isEditing ? customers.find(c => c.id === editingId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
+                    id: editingId || Date.now().toString(),
+                    hours, labor, materials,
+                    total: labor + materials,
+                    status: editingId ? customers.find(j => j.id === editingId)?.status || 'Estimate' : 'Estimate',
+                    createdAt: editingId ? customers.find(j => j.id === editingId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
                     photos: form.photos || []
                 };
-                let updated;
-                if (isEditing) {
-                    updated = customers.map(c => c.id === editingId ? newJob : c);
-                } else {
-                    updated = [newJob, ...customers];
-                }
-                setCustomers(updated);
-                setForm({ name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: [] });
-                setIsEditing(false);
+                setCustomers(prev => {
+                    if (editingId) return prev.map(j => j.id === editingId ? job : j);
+                    return [job, ...prev];
+                });
+                setForm({ name:"", phone:"", email:"", address:"", hours:"", labor:"", materials:"", description:"", photos:[] });
                 setEditingId(null);
                 setView('dashboard');
             };
 
-            const handleDelete = (id) => {
-                if (window.confirm('Are you sure you want to delete this job?')) {
-                    setCustomers(customers.filter(c => c.id !== id));
-                    if (selectedId === id) setSelectedId(null);
-                }
-            };
-
-            const generatePDF = (job) => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                const isPaid = job.status === 'Paid';
-                const label = isPaid ? 'INVOICE' : 'ESTIMATE';
-
-                doc.setFontSize(22);
-                doc.text(company.name || "Dean's Handyman TX", 105, 20, { align: 'center' });
-                if (company.logo) doc.addImage(company.logo, 'PNG', 80, 25, 50, 15);
-                doc.setFontSize(10);
-                doc.text([company.phone, company.email, company.address].filter(Boolean).join(' • '), 105, 45, { align: 'center' });
-                doc.line(15, 50, 195, 50);
-
-                doc.setFontSize(14);
-                doc.text('Bill To:', 15, 60);
-                doc.setFontSize(12);
-                doc.text(job.name, 15, 68);
-                doc.text(job.address || '', 15, 74);
-                doc.text(`${label} #: ${job.id.slice(-6)}`, 105, 60);
-                doc.text(`Date: ${new Date(job.createdAt).toLocaleDateString()}`, 105, 68);
-
-                let y = 85;
-                doc.setFontSize(12);
-                doc.text('Job Description:', 15, y);
-                y += 8;
-                const descLines = doc.splitTextToSize(job.description || 'No description provided.', 180);
-                doc.text(descLines, 15, y);
-                y += descLines.length * 6 + 10;
-
-                if (job.photos.length > 0) {
-                    doc.text('Photos:', 15, y);
-                    y += 8;
-                    job.photos.forEach((photo, idx) => {
-                        if (y > 250) { doc.addPage(); y = 20; }
-                        doc.addImage(photo, 'JPEG', 15, y, 90, 60);
-                        y += 65;
-                    });
-                }
-
-                y += 10;
-                if (job.hours > 0) {
-                    doc.text(`Estimated Hours: ${job.hours} @ \[ {parseFloat(company.hourlyRate || 0).toFixed(2)}/hr`, 15, y);
-                    y += 10;
-                }
-                doc.text(`Labor: \]{job.labor.toFixed(2)}`, 15, y); y += 10;
-                doc.text(`Materials: \[ {job.materials.toFixed(2)}`, 15, y); y += 15;
-                doc.setFontSize(16);
-                doc.setTextColor(0, 0, 255);
-                doc.text(`TOTAL: \]{job.total.toFixed(2)}`, 15, y);
-
-                doc.save(`\( {label}- \){job.name.replace(/\s+/g, '-')}.pdf`);
-            };
-
-            const sendDoc = (job, mode) => {
-                const isEst = job.status === 'Estimate';
-                const label = isEst ? 'Estimate' : 'Invoice';
-                const body = `
-${company.name || "Dean's Handyman TX"} - ${label}
-Date: ${new Date(job.createdAt).toLocaleDateString()}
-Job #: ${job.id.slice(-6)}
-
-Customer: ${job.name}
-${job.address ? `Address: ${job.address}` : ''}
-Description: ${job.description}
-
-${job.hours > 0 ? `Hours: ${job.hours} @ \[ {(company.hourlyRate || 0).toFixed(2)}/hr` : ''}
-Labor: \]{job.labor.toFixed(2)}
-Materials: \[ {job.materials.toFixed(2)}
-TOTAL: \]{job.total.toFixed(2)}
-
-${!isEst ? `Payment Options:
-${company.paymentLinks.venmo ? `Venmo: ${company.paymentLinks.venmo}\n` : ''}
-${company.paymentLinks.paypal ? `PayPal: ${company.paymentLinks.paypal}\n` : ''}
-${company.paymentLinks.cashapp ? `Cash App: ${company.paymentLinks.cashapp}\n` : ''}
-${company.paymentLinks.square ? `Square: ${company.paymentLinks.square}` : ''}
-` : 'Please confirm acceptance by replying to this message.'}
-
-Thank you for choosing us!
-${company.name || "Dean's Handyman TX"}
-${company.phone ? `Call: ${company.phone}` : ''}
-`.trim();
-
-                const url = mode === 'email' 
-                    ? `mailto:\( {job.email}?subject= \){label} from \( {company.name || "Dean's Handyman TX"}&body= \){encodeURIComponent(body)}`
-                    : `sms:\( {job.phone}?body= \){encodeURIComponent(body)}`;
-                window.open(url, '_blank');
-            };
-
-            const currentJob = customers.find(c => c.id === selectedId);
-
-            const filteredJobs = customers.filter(job => {
-                const tabMatch = activeTab === 'leads' ? job.status === 'Estimate' :
-                                 activeTab === 'active' ? ['Active', 'In Progress'].includes(job.status) :
-                                 job.status === 'Paid';
-                const searchMatch = !searchTerm || 
-                    job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (job.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (job.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (job.description || '').toLowerCase().includes(searchTerm.toLowerCase());
-                return tabMatch && searchMatch;
+            const filtered = customers.filter(j => {
+                const matchTab = tab === 'estimates' ? j.status === 'Estimate' :
+                                  tab === 'active' ? j.status === 'Active' :
+                                  j.status === 'Paid';
+                return matchTab;
             });
 
-            if (view === 'settings') {
-                return <SettingsView company={company} onBack={() => setView('dashboard')} onSave={(updated) => { setCompany(updated); setView('dashboard'); }} />;
-            }
+            const currentJob = customers.find(j => j.id === selected);
 
-            if (view === 'job-form') {
+            if (view === 'settings') return <Settings company={company} setCompany={setCompany} onBack={() => setView('dashboard')} />;
+
+            if (view === 'form') {
                 return (
-                    <div className="p-6 pb-32 max-w-3xl mx-auto animate-in">
-                        <button onClick={() => { setView('dashboard'); setIsEditing(false); }} className="mb-8 text-slate-500 hover:text-slate-700 font-semibold flex items-center">
+                    <div className="p-6 max-w-2xl mx-auto fade-in">
+                        <button onClick={() => setView('dashboard')} className="mb-6 text-slate-600 hover:text-slate-800 font-medium flex items-center">
                             <i className="fa-solid fa-arrow-left mr-2"></i> Cancel
                         </button>
-                        <h2 className="text-3xl font-bold mb-8 text-slate-900">{isEditing ? 'Edit Job' : 'New Job'}</h2>
-                        <form onSubmit={handleSaveJob} className="space-y-8">
-                            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-md space-y-6">
-                                <h3 className="text-xl font-semibold text-slate-800">Customer Info</h3>
-                                <input required placeholder="Customer Name" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <input required placeholder="Phone" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-                                    <input placeholder="Email" type="email" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                        <h1 className="text-3xl font-bold mb-8">{editingId ? 'Edit Job' : 'New Job'}</h1>
+                        <form onSubmit={saveJob} className="space-y-6">
+                            <div className="bg-white p-6 rounded-2xl shadow border">
+                                <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Customer Name" className="w-full p-4 border rounded-xl mb-4" />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <input required value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="Phone" className="w-full p-4 border rounded-xl" />
+                                    <input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="Email" className="w-full p-4 border rounded-xl" />
                                 </div>
-                                <input placeholder="Job Address" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
+                                <input value={form.address} onChange={e=>setForm({...form,address:e.target.value})} placeholder="Job Address" className="w-full p-4 border rounded-xl" />
                             </div>
-
-                            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-md space-y-6">
-                                <h3 className="text-xl font-semibold text-slate-800">Job Details</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <input type="number" placeholder="Est. Hours" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.hours} onChange={e => setForm({...form, hours: e.target.value})} />
-                                    <input type="number" placeholder="Labor ($)" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.labor} onChange={e => setForm({...form, labor: e.target.value})} />
-                                    <input type="number" placeholder="Materials ($)" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.materials} onChange={e => setForm({...form, materials: e.target.value})} />
+                            <div className="bg-white p-6 rounded-2xl shadow border">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <input type="number" value={form.hours} onChange={e=>setForm({...form,hours:e.target.value})} placeholder="Est. Hours" className="w-full p-4 border rounded-xl" />
+                                    <input type="number" value={form.labor} onChange={e=>setForm({...form,labor:e.target.value})} placeholder="Labor $" className="w-full p-4 border rounded-xl" />
+                                    <input type="number" value={form.materials} onChange={e=>setForm({...form,materials:e.target.value})} placeholder="Materials $" className="w-full p-4 border rounded-xl" />
                                 </div>
-                                <textarea rows="5" placeholder="Job description / scope of work..." className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                                <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Job scope..." rows="4" className="w-full p-4 border rounded-xl"></textarea>
                             </div>
-
-                            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-md space-y-6">
-                                <h3 className="text-xl font-semibold text-slate-800">Photos</h3>
-                                <input type="file" multiple accept="image/*" onChange={handlePhotoChange} className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200" />
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                                    {form.photos.map((p, i) => (
-                                        <div key={i} className="relative rounded-2xl overflow-hidden shadow">
-                                            <img src={p} alt="preview" className="w-full h-32 object-cover" />
-                                            <button type="button" onClick={() => setForm({...form, photos: form.photos.filter((_, idx) => idx !== i)})} className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shadow">X</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-10 rounded-3xl text-white text-center shadow-xl">
-                                <p className="text-sm uppercase font-bold tracking-wider opacity-80 mb-2">Total Amount</p>
-                                <p className="text-6xl font-black">${(parseFloat(form.labor || 0) + parseFloat(form.materials || 0)).toFixed(2)}</p>
-                            </div>
-
-                            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-3xl font-bold text-xl shadow-lg transition">
-                                {isEditing ? 'Update Job' : 'Create Job'}
+                            <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-xl font-bold text-lg hover:bg-blue-700">
+                                {editingId ? 'Update Job' : 'Save Job'}
                             </button>
                         </form>
                     </div>
                 );
             }
 
-            if (view === 'document' && currentJob) {
+            if (view === 'detail' && currentJob) {
                 return (
-                    <div className="min-h-screen bg-white p-8 pb-40 max-w-4xl mx-auto">
-                        <button onClick={() => setView('dashboard')} className="mb-10 text-slate-500 hover:text-slate-700 font-semibold flex items-center">
-                            <i className="fa-solid fa-arrow-left mr-2"></i> Back to Dashboard
+                    <div className="p-6 max-w-3xl mx-auto fade-in">
+                        <button onClick={() => setView('dashboard')} className="mb-6 text-slate-600 hover:text-slate-800 font-medium flex items-center">
+                            <i className="fa-solid fa-arrow-left mr-2"></i> Back
                         </button>
-                        <div className="border-t-8 border-slate-900 pt-10">
-                            <div className="flex flex-col md:flex-row justify-between items-start mb-12">
+                        <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+                            <div className="p-8 border-b">
+                                <h2 className="text-3xl font-bold">{currentJob.name}</h2>
+                                <p className="text-slate-600 mt-2">{currentJob.address || '—'}</p>
+                                <p className="text-sm text-slate-500 mt-1">Created {new Date(currentJob.createdAt).toLocaleDateString()}</p>
+                            </div>
+                            <div className="p-8 space-y-6">
                                 <div>
-                                    {company.logo && <img src={company.logo} alt="logo" className="h-20 mb-6 object-contain" />}
-                                    <h1 className="text-4xl font-black text-slate-900">{company.name || "Dean's Handyman TX"}</h1>
-                                    <div className="text-sm text-slate-600 mt-3 space-y-1">
-                                        <p>{company.phone}</p>
-                                        <p>{company.email}</p>
-                                        <p>{company.address}</p>
+                                    <h3 className="font-semibold text-slate-700 mb-2">Description</h3>
+                                    <p className="whitespace-pre-line">{currentJob.description || 'No description'}</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <h3 className="font-semibold text-slate-700 mb-2">Labor</h3>
+                                        <p className="text-2xl font-bold">${Number(currentJob.labor).toFixed(2)}</p>
+                                        {currentJob.hours > 0 && <p className="text-sm text-slate-500">{currentJob.hours} hrs @ ${company.hourlyRate}/hr</p>}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-slate-700 mb-2">Materials</h3>
+                                        <p className="text-2xl font-bold">${Number(currentJob.materials).toFixed(2)}</p>
                                     </div>
                                 </div>
-                                <div className="text-right mt-8 md:mt-0">
-                                    <h2 className="text-5xl font-black text-slate-900">{currentJob.status === 'Paid' ? 'INVOICE' : 'ESTIMATE'}</h2>
-                                    <p className="text-sm text-slate-500 mt-2">Date: {new Date(currentJob.createdAt).toLocaleDateString()}</p>
-                                    <p className="text-sm text-slate-500">Job #: {currentJob.id.slice(-6)}</p>
+                                <div className="pt-6 border-t">
+                                    <h3 className="font-semibold text-slate-700 mb-2">Total</h3>
+                                    <p className="text-4xl font-extrabold text-blue-600">${Number(currentJob.total).toFixed(2)}</p>
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
-                                <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Bill To</p>
-                                    <p className="text-3xl font-bold text-slate-900">{currentJob.name}</p>
-                                    <p className="text-lg text-slate-600 mt-2">{currentJob.address}</p>
-                                </div>
-                                <div className="bg-slate-50 p-8 rounded-3xl">
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Job Details</p>
-                                    <p className="text-lg text-slate-700 whitespace-pre-line">{currentJob.description || 'No description'}</p>
-                                    {currentJob.hours > 0 && <p className="mt-6 text-lg font-medium">Est. Hours: {currentJob.hours} @ ${(company.hourlyRate || 0).toFixed(2)}/hr</p>}
-                                </div>
-                            </div>
-
-                            {currentJob.photos.length > 0 && (
-                                <div className="mb-12">
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-4">Photos</p>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                                        {currentJob.photos.map((p, i) => (
-                                            <img key={i} src={p} alt={`Job photo ${i+1}`} className="rounded-2xl shadow-md object-cover h-48 w-full" />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="space-y-8 mb-16">
-                                <div className="flex justify-between items-center py-4 border-b border-slate-200">
-                                    <span className="text-slate-600 font-medium">Labor</span>
-                                    <span className="text-xl font-bold">${currentJob.labor.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between items-center py-4 border-b border-slate-200">
-                                    <span className="text-slate-600 font-medium">Materials</span>
-                                    <span className="text-xl font-bold">${currentJob.materials.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between items-center pt-6">
-                                    <span className="text-3xl font-bold text-slate-900">TOTAL</span>
-                                    <span className="text-5xl font-black text-blue-600">${currentJob.total.toFixed(2)}</span>
-                                </div>
-                            </div>
-
-                            {currentJob.status === 'Paid' && (
-                                <div className="bg-slate-900 text-white p-10 rounded-3xl">
-                                    <p className="text-sm font-bold text-blue-300 uppercase tracking-wider mb-6 text-center">Payment Options</p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {company.paymentLinks.venmo && <a href={company.paymentLinks.venmo} target="_blank" className="bg-white/10 p-6 rounded-2xl text-center font-bold hover:bg-white/20 transition">Venmo</a>}
-                                        {company.paymentLinks.paypal && <a href={company.paymentLinks.paypal} target="_blank" className="bg-white/10 p-6 rounded-2xl text-center font-bold hover:bg-white/20 transition">PayPal</a>}
-                                        {company.paymentLinks.cashapp && <a href={company.paymentLinks.cashapp} target="_blank" className="bg-white/10 p-6 rounded-2xl text-center font-bold hover:bg-white/20 transition">Cash App</a>}
-                                        {company.paymentLinks.square && <a href={company.paymentLinks.square} target="_blank" className="md:col-span-2 bg-blue-600 p-6 rounded-2xl text-center font-bold hover:bg-blue-700 transition">Pay with Square</a>}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="fixed bottom-8 left-4 right-4 md:left-auto md:right-8 md:w-96 flex gap-4 bg-white p-4 rounded-3xl shadow-2xl border border-slate-200">
-                            <button onClick={() => sendDoc(currentJob, 'email')} className="flex-1 bg-slate-800 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-slate-900 transition">
-                                <i className="fa-solid fa-envelope"></i> Email
-                            </button>
-                            <button onClick={() => sendDoc(currentJob, 'sms')} className="flex-1 bg-blue-600 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 transition">
-                                <i className="fa-solid fa-comment-dots"></i> Text
-                            </button>
-                            <button onClick={() => generatePDF(currentJob)} className="flex-1 bg-green-600 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-green-700 transition">
-                                <i className="fa-solid fa-file-pdf"></i> PDF
-                            </button>
                         </div>
                     </div>
                 );
             }
 
             return (
-                <div className="max-w-4xl mx-auto min-h-screen bg-slate-50 pb-32">
-                    <header className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-8 pt-20 pb-24 rounded-b-[4rem] shadow-2xl">
-                        <div className="flex justify-between items-start">
+                <div className="min-h-screen pb-24">
+                    <header className="bg-slate-900 text-white p-8">
+                        <div className="max-w-4xl mx-auto flex justify-between items-center">
                             <div>
-                                {company.logo ? <img src={company.logo} className="h-16 mb-6 object-contain invert" /> : <div className="h-16 w-16 bg-blue-600 rounded-2xl mb-6 flex items-center justify-center text-white text-3xl font-bold"><i className="fa-solid fa-tools"></i></div>}
-                                <h1 className="text-5xl font-black tracking-tight">{company.name || "Dean's Job Tracker"}</h1>
-                                <p className="text-lg text-blue-300 mt-3">{company.address || "Dallas, TX"}</p>
+                                <h1 className="text-3xl font-bold">{company.name || "Job Tracker"}</h1>
+                                <p className="text-slate-400">{company.address}</p>
                             </div>
-                            <button onClick={() => setView('settings')} className="bg-white/10 p-4 rounded-2xl hover:bg-white/20 transition">
-                                <i className="fa-solid fa-gear text-2xl"></i>
+                            <button onClick={() => setView('settings')} className="p-3 bg-white/10 rounded-full hover:bg-white/20">
+                                <i className="fa-solid fa-gear text-xl"></i>
                             </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-6 mt-12">
-                            <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20">
-                                <p className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Open Estimates</p>
-                                <p className="text-6xl font-black">{customers.filter(c => c.status === 'Estimate').length}</p>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20">
-                                <p className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Active Jobs</p>
-                                <p className="text-6xl font-black text-blue-300">{customers.filter(c => c.status !== 'Estimate' && c.status !== 'Paid').length}</p>
-                            </div>
                         </div>
                     </header>
 
-                    <div className="px-8 -mt-16 relative z-10">
-                        <div className="bg-white rounded-[3rem] shadow-2xl p-3 border border-slate-200 flex">
-                            {['leads', 'active', 'history'].map(tab => (
-                                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-5 rounded-[2.5rem] font-bold text-sm uppercase transition-all ${activeTab === tab ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'}`}>
-                                    {tab === 'leads' ? 'Estimates' : tab === 'active' ? 'Active' : 'Completed'}
+                    <main className="max-w-4xl mx-auto p-6">
+                        <div className="flex gap-3 mb-8 bg-white rounded-full p-2 shadow">
+                            {['estimates', 'active', 'paid'].map(t => (
+                                <button key={t} onClick={() => setTab(t)} className={`flex-1 py-4 rounded-full font-medium ${tab === t ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
+                                    {t === 'estimates' ? 'Estimates' : t === 'active' ? 'Active' : 'Paid'}
                                 </button>
                             ))}
                         </div>
-                    </div>
 
-                    <main className="px-8 mt-12 space-y-8">
-                        <input 
-                            type="text" 
-                            placeholder="Search jobs by name, phone, or address..." 
-                            className="w-full p-6 bg-white rounded-3xl border border-slate-200 shadow-md outline-none font-medium text-lg focus:border-blue-500" 
-                            value={searchTerm} 
-                            onChange={e => setSearchTerm(e.target.value)} 
-                        />
-
-                        {filteredJobs.length === 0 && (
+                        {filtered.length === 0 && (
                             <div className="text-center py-20 text-slate-500">
-                                <i className="fa-solid fa-folder-open text-6xl mb-6 opacity-50"></i>
-                                <p className="text-xl font-medium">No jobs found. Create one to get started!</p>
+                                <i className="fa-solid fa-folder-open text-6xl mb-4 opacity-60"></i>
+                                <p className="text-xl">No jobs yet</p>
                             </div>
                         )}
 
-                        {filteredJobs.map(job => (
-                            <div key={job.id} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-md hover:shadow-lg transition">
-                                <div className="flex justify-between items-start mb-6">
+                        {filtered.map(job => (
+                            <div key={job.id} className="bg-white rounded-2xl shadow mb-6 p-6 hover:shadow-md transition">
+                                <div className="flex justify-between">
                                     <div>
-                                        <h3 className="text-3xl font-bold text-slate-900">{job.name}</h3>
-                                        <p className="text-sm text-slate-500 mt-2">{job.address || 'No address'}</p>
-                                        {job.photos.length > 0 && <p className="text-sm text-blue-600 mt-1">{job.photos.length} photo{job.photos.length > 1 ? 's' : ''}</p>}
+                                        <h3 className="text-xl font-bold">{job.name}</h3>
+                                        <p className="text-slate-600">{job.address || '—'}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-4xl font-black text-blue-600">${job.total.toFixed(0)}</p>
-                                        <p className="text-xs text-slate-500 mt-1">{new Date(job.createdAt).toLocaleDateString()}</p>
+                                        <p className="text-2xl font-bold text-blue-600">${Number(job.total).toFixed(0)}</p>
+                                        <p className="text-sm text-slate-500">{job.status}</p>
                                     </div>
                                 </div>
-                                <p className="text-slate-700 mb-6 line-clamp-2">{job.description || 'No description'}</p>
-                                <div className="flex flex-wrap gap-4">
-                                    <button onClick={() => { setSelectedId(job.id); setView('document'); }} className="flex-1 min-w-[100px] bg-slate-100 hover:bg-slate-200 text-slate-800 py-5 rounded-2xl font-bold text-sm transition">
-                                        View Details
+                                <div className="mt-6 flex gap-3">
+                                    <button onClick={() => { setSelected(job.id); setView('detail'); }} className="flex-1 py-3 bg-slate-100 rounded-xl hover:bg-slate-200 font-medium">
+                                        View
                                     </button>
                                     <button onClick={() => {
-                                        setForm({
-                                            name: job.name, phone: job.phone, email: job.email, address: job.address,
-                                            hours: job.hours.toString(), labor: job.labor.toString(), materials: job.materials.toString(),
-                                            description: job.description, photos: job.photos
-                                        });
-                                        setIsEditing(true);
+                                        setForm(job);
                                         setEditingId(job.id);
-                                        setView('job-form');
-                                    }} className="flex-1 min-w-[100px] bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-5 rounded-2xl font-bold text-sm transition">
+                                        setView('form');
+                                    }} className="flex-1 py-3 bg-yellow-100 text-yellow-800 rounded-xl hover:bg-yellow-200 font-medium">
                                         Edit
                                     </button>
-                                    <button onClick={() => handleDelete(job.id)} className="flex-1 min-w-[100px] bg-red-100 hover:bg-red-200 text-red-800 py-5 rounded-2xl font-bold text-sm transition">
+                                    <button onClick={() => {
+                                        if (confirm('Delete job?')) setCustomers(customers.filter(j => j.id !== job.id));
+                                    }} className="flex-1 py-3 bg-red-100 text-red-800 rounded-xl hover:bg-red-200 font-medium">
                                         Delete
                                     </button>
-                                </div>
-                                <div className="flex gap-4 mt-6">
-                                    {job.status === 'Estimate' && (
-                                        <button onClick={() => setCustomers(customers.map(c => c.id === job.id ? {...c, status: 'Active'} : c))} className="flex-1 bg-slate-800 text-white py-5 rounded-2xl font-bold hover:bg-slate-900 transition">
-                                            Mark Active
-                                        </button>
-                                    )}
-                                    {job.status === 'Active' && (
-                                        <button onClick={() => setCustomers(customers.map(c => c.id === job.id ? {...c, status: 'Paid'} : c))} className="flex-1 bg-green-600 text-white py-5 rounded-2xl font-bold hover:bg-green-700 transition">
-                                            Mark Paid
-                                        </button>
-                                    )}
-                                    {job.status === 'Paid' && <p className="flex-1 text-center py-5 text-green-600 font-bold">Completed</p>}
                                 </div>
                             </div>
                         ))}
                     </main>
 
-                    <button onClick={() => { 
-                        setForm({ name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: [] }); 
-                        setIsEditing(false); 
-                        setEditingId(null); 
-                        setView('job-form'); 
-                    }} className="fixed bottom-8 right-8 bg-blue-600 text-white h-20 w-20 rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition z-50">
-                        <i className="fa-solid fa-plus text-4xl"></i>
+                    <button onClick={() => { setForm({}); setEditingId(null); setView('form'); }} className="fixed bottom-8 right-8 bg-blue-600 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-3xl hover:bg-blue-700">
+                        <i className="fa-solid fa-plus"></i>
                     </button>
                 </div>
             );
         }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(
+            <ErrorBoundary>
+                <MainApp />
+            </ErrorBoundary>
+        );
     </script>
 </body>
 </html>
