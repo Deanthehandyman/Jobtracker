@@ -1,449 +1,2177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dean's Job Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; overscroll-behavior: none; }
-        input, textarea { font-size: 16px !important; }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Contractor Management Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --bg-alt: #0f172a;
+      --card-bg: #111827;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.1);
+      --accent-soft-strong: rgba(37, 99, 235, 0.22);
+      --accent-light: #60a5fa;
+      --accent-danger: #ef4444;
+      --border-subtle: #1f2937;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --text-soft: #6b7280;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.85);
+      --shadow-card: 0 18px 35px rgba(15, 23, 42, 0.95);
+      --shadow-elevated: 0 24px 60px rgba(15, 23, 42, 0.95);
+      --transition-fast: 0.17s ease-out;
+      --transition-med: 0.22s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #1d4ed8 0, #020617 42%, #020617 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 1240px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.97));
+      border-radius: 24px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      box-shadow: 0 30px 80px rgba(15, 23, 42, 0.95);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      backdrop-filter: blur(22px);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+      background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.32), transparent 55%);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 16px;
+      background: radial-gradient(circle at 30% 10%, #60a5fa, #1d4ed8 45%, #0b1120 100%);
+      box-shadow: 0 16px 30px rgba(37, 99, 235, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 800;
+      color: #eff6ff;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title span {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--accent-light);
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill-badge {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.7);
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.08s ease-out;
+      font-size: 15px;
+    }
+
+    .btn-icon:hover {
+      background: rgba(30, 64, 175, 0.85);
+      border-color: rgba(59, 130, 246, 0.9);
+      color: #e5edff;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.6);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 580px;
+    }
+
+    nav {
+      padding: 18px 16px 18px;
+      border-right: 1px solid rgba(31, 41, 55, 0.9);
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.97), rgba(2, 6, 23, 0.97));
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-soft);
+      padding: 0 4px;
+    }
+
+    .tab-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.09s ease-out, box-shadow 0.09s ease-out;
+    }
+
+    .tab-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--accent-light);
+    }
+
+    .tab-labels {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .tab-title {
+      line-height: 1.2;
+    }
+
+    .tab-subtitle {
+      font-size: 10px;
+      color: var(--text-soft);
+    }
+
+    .tab-count {
+      margin-left: auto;
+      padding: 2px 7px;
+      font-size: 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-soft);
+      border: 1px solid rgba(31, 41, 55, 0.9);
+    }
+
+    .tab.active {
+      background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.65), rgba(37, 99, 235, 0.14));
+      border-color: rgba(59, 130, 246, 0.8);
+      color: #e5edff;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.85);
+      transform: translateY(-1px);
+    }
+
+    .tab.active .tab-count {
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--accent-light);
+      border-color: rgba(129, 140, 248, 0.7);
+    }
+
+    .nav-footer {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(31, 41, 55, 0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .nav-footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .badge-soft {
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+
+    .nav-progress {
+      width: 100%;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      overflow: hidden;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+    }
+
+    .nav-progress-inner {
+      height: 100%;
+      width: 68%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #22c55e, #eab308);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.1);
+    }
+
+    .content {
+      padding: 18px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: radial-gradient(circle at top center, rgba(37, 99, 235, 0.16), transparent 58%);
+    }
+
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .content-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .content-title {
+      font-size: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .content-title span {
+      font-size: 12px;
+      color: var(--accent-light);
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(37, 99, 235, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    .content-subtitle {
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    .content-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      border-radius: var(--radius-pill);
+      border: 1px solid transparent;
+      padding: 7px 13px;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform 0.08s ease-out;
+      background: transparent;
+      color: var(--text-muted);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #eff6ff;
+      border-color: rgba(191, 219, 254, 0.32);
+      box-shadow: 0 11px 28px rgba(37, 99, 235, 0.8);
+      font-weight: 500;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1d4ed8);
+      box-shadow: 0 15px 35px rgba(37, 99, 235, 0.9);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      border-color: rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-muted);
+    }
+
+    .btn-outline:hover {
+      border-color: rgba(59, 130, 246, 0.85);
+      color: var(--accent-light);
+      box-shadow: 0 8px 22px rgba(37, 99, 235, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .btn-icon-small {
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1.6fr;
+      gap: 14px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .stat-card {
+      background: radial-gradient(circle at top left, rgba(30, 64, 175, 0.58), rgba(15, 23, 42, 0.96));
+      border-radius: var(--radius-lg);
+      padding: 12px 11px 11px;
+      border: 1px solid rgba(55, 65, 81, 0.85);
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-soft);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stat-chip {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+
+    .stat-unit {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .stat-trend {
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .trend-badge {
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(22, 163, 74, 0.16);
+      color: #4ade80;
+      border: 1px solid rgba(22, 163, 74, 0.6);
+      font-size: 10px;
+    }
+
+    .trend-muted {
+      color: var(--text-soft);
+    }
+
+    .stat-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .pill-mini {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .view-card {
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      box-shadow: var(--shadow-card);
+      padding: 10px 11px 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .view-header span {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .view-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .view-chip {
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.98);
+      border: 1px solid rgba(31, 41, 55, 0.94);
+      font-size: 11px;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.06s ease-out;
+    }
+
+    .view-chip.active {
+      background: rgba(37, 99, 235, 0.16);
+      border-color: rgba(59, 130, 246, 0.85);
+      color: var(--accent-light);
+      transform: translateY(-1px);
+    }
+
+    .view-chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(96, 165, 250, 0.8);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.7);
+    }
+
+    .table-card {
+      background: rgba(15, 23, 42, 0.97);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      box-shadow: var(--shadow-card);
+      padding: 10px 11px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 260px;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .table-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .table-title {
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .table-badge {
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      color: var(--text-soft);
+    }
+
+    .table-subtitle {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .table-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .table-search {
+      position: relative;
+    }
+
+    .table-search input {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 999px;
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      color: var(--text);
+      padding: 5px 8px 5px 22px;
+      font-size: 11px;
+      outline: none;
+      min-width: 140px;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+
+    .table-search input::placeholder {
+      color: var(--text-soft);
+    }
+
+    .table-search input:focus {
+      border-color: rgba(59, 130, 246, 0.85);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.65);
+      background: rgba(15, 23, 42, 0.97);
+    }
+
+    .table-search-icon {
+      position: absolute;
+      left: 7px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .table-body {
+      margin-top: 4px;
+      border-radius: 12px;
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98));
+      overflow: hidden;
+      box-shadow: 0 16px 38px rgba(15, 23, 42, 0.98);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead {
+      background: rgba(15, 23, 42, 0.98);
+    }
+
+    th,
+    td {
+      padding: 7px 9px;
+      text-align: left;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.92);
+    }
+
+    th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-soft);
+      background: linear-gradient(90deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.94));
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.96);
+    }
+
+    tbody tr:hover {
+      background: rgba(30, 64, 175, 0.14);
+    }
+
+    .cell-muted {
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .cell-pill {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: rgba(15, 23, 42, 0.98);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cell-pill.status-open {
+      border-color: rgba(22, 163, 74, 0.7);
+      color: #4ade80;
+      background: rgba(22, 163, 74, 0.12);
+    }
+
+    .cell-pill.status-due {
+      border-color: rgba(234, 179, 8, 0.7);
+      color: #facc15;
+      background: rgba(234, 179, 8, 0.12);
+    }
+
+    .cell-pill.status-paid {
+      border-color: rgba(56, 189, 248, 0.75);
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .cell-pill.status-late {
+      border-color: rgba(239, 68, 68, 0.8);
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .cell-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .btn-table {
+      border-radius: 999px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: rgba(15, 23, 42, 0.98);
+      color: var(--text-soft);
+      font-size: 11px;
+      padding: 3px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.06s ease-out;
+    }
+
+    .btn-table:hover {
+      border-color: rgba(59, 130, 246, 0.8);
+      color: var(--accent-light);
+      background: rgba(15, 23, 42, 0.98);
+      transform: translateY(-1px);
+    }
+
+    .btn-table.danger:hover {
+      border-color: rgba(248, 113, 113, 0.9);
+      color: #fecaca;
+      background: rgba(127, 29, 29, 0.8);
+    }
+
+    .table-empty {
+      text-align: center;
+      padding: 24px 12px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(37, 99, 235, 0.28), rgba(15, 23, 42, 0.98));
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 18px;
+      backdrop-filter: blur(20px);
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 460px;
+      background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.26), rgba(15, 23, 42, 0.99));
+      border-radius: 20px;
+      padding: 16px 18px 14px;
+      border: 1px solid rgba(59, 130, 246, 0.6);
+      box-shadow: var(--shadow-elevated);
+      position: relative;
+      color: var(--text);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-tag {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(59, 130, 246, 0.9);
+      color: var(--accent-light);
+    }
+
+    .modal-close {
+      border-radius: 999px;
+      width: 26px;
+      height: 26px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.92);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.08s ease-out;
+      font-size: 14px;
+    }
+
+    .modal-close:hover {
+      background: rgba(127, 29, 29, 0.9);
+      border-color: rgba(248, 113, 113, 0.9);
+      color: #fee2e2;
+      transform: translateY(-1px);
+    }
+
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .modal-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-field {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 12px;
+    }
+
+    .modal-label {
+      color: var(--text-soft);
+      font-size: 11px;
+    }
+
+    .modal-label span {
+      color: var(--accent-light);
+    }
+
+    .modal-input,
+    .modal-select,
+    .modal-textarea {
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: 10px;
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      color: var(--text);
+      padding: 6px 8px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), transform 0.06s ease-out;
+    }
+
+    .modal-input::placeholder,
+    .modal-textarea::placeholder {
+      color: var(--text-soft);
+    }
+
+    .modal-input:focus,
+    .modal-select:focus,
+    .modal-textarea:focus {
+      border-color: rgba(59, 130, 246, 0.9);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.7);
+      background: rgba(15, 23, 42, 0.98);
+      transform: translateY(-1px);
+    }
+
+    .modal-textarea {
+      resize: vertical;
+      min-height: 60px;
+      max-height: 160px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      gap: 8px;
+    }
+
+    .modal-footer-left {
+      font-size: 11px;
+      color: var(--text-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .modal-footer-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-ghost {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      padding: 6px 11px;
+      font-size: 12px;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-soft);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.08s ease-out;
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(59, 130, 246, 0.8);
+      color: var(--accent-light);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.7);
+    }
+
+    .btn-danger {
+      border-radius: 999px;
+      border: 1px solid rgba(248, 113, 113, 0.8);
+      padding: 6px 11px;
+      font-size: 12px;
+      background: linear-gradient(135deg, rgba(185, 28, 28, 0.98), rgba(127, 29, 29, 0.98));
+      color: #fee2e2;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.08s ease-out, box-shadow var(--transition-fast);
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(135deg, rgba(220, 38, 38, 0.98), rgba(153, 27, 27, 0.98));
+      box-shadow: 0 12px 26px rgba(248, 113, 113, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .badge-keyboard {
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      font-size: 10px;
+      color: var(--text-soft);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 24px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(59, 130, 246, 0.7);
+      color: var(--accent-light);
+      font-size: 11px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.98);
+      z-index: 60;
+    }
+
+    .toast.active {
+      display: inline-flex;
+      animation: fadeInOut 3s forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      12% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      80% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+    }
+
+    @media (max-width: 960px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      nav {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 10px 12px;
+      }
+
+      .nav-section-title,
+      .nav-footer {
+        display: none;
+      }
+
+      .tab-list {
+        flex-direction: row;
+        gap: 6px;
+      }
+
+      .tab {
+        padding: 7px 9px;
+      }
+
+      .tab-title {
+        font-size: 12px;
+      }
+
+      .tab-subtitle {
+        display: none;
+      }
+    }
+
+    @media (max-width: 800px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .content-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .table-header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .table-search input {
+        min-width: 120px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 10px;
+      }
+
+      .shell {
+        border-radius: 16px;
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modal {
+        padding: 14px 12px 12px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <div class="brand-logo">C</div>
+        <div class="brand-text">
+          <div class="brand-title">
+            Contractor OS
+            <span>Control room</span>
+          </div>
+          <div class="brand-subtitle">Jobs, invoices, payments – unified.</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="pill-badge">
+          <div class="pill-dot"></div>
+          Live workspace
+        </div>
+        <button class="btn-icon" type="button" id="resetAppBtn" title="Reset demo data">
+          ⟳
+        </button>
+      </div>
+    </header>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    <main>
+      <nav>
+        <div>
+          <div class="nav-section-title">Workspace</div>
+          <div class="tab-list">
+            <button class="tab active" data-tab="customers">
+              <div class="tab-icon">👥</div>
+              <div class="tab-labels">
+                <div class="tab-title">Customers</div>
+                <div class="tab-subtitle">Accounts & contacts</div>
+              </div>
+              <span class="tab-count" id="customersCount">0</span>
+            </button>
+            <button class="tab" data-tab="jobs">
+              <div class="tab-icon">📋</div>
+              <div class="tab-labels">
+                <div class="tab-title">Jobs</div>
+                <div class="tab-subtitle">Active work orders</div>
+              </div>
+              <span class="tab-count" id="jobsCount">0</span>
+            </button>
+            <button class="tab" data-tab="invoices">
+              <div class="tab-icon">💼</div>
+              <div class="tab-labels">
+                <div class="tab-title">Invoices</div>
+                <div class="tab-subtitle">Billing & status</div>
+              </div>
+              <span class="tab-count" id="invoicesCount">0</span>
+            </button>
+            <button class="tab" data-tab="payments">
+              <div class="tab-icon">💳</div>
+              <div class="tab-labels">
+                <div class="tab-title">Payments</div>
+                <div class="tab-subtitle">Cashflow tracking</div>
+              </div>
+              <span class="tab-count" id="paymentsCount">0</span>
+            </button>
+          </div>
+        </div>
+        <div class="nav-footer">
+          <div class="nav-footer-row">
+            <span>Week utilization</span>
+            <span class="badge-soft">Demo workspace</span>
+          </div>
+          <div class="nav-progress">
+            <div class="nav-progress-inner"></div>
+          </div>
+          <div class="nav-footer-row">
+            <span>Keyboard: <strong>Alt + N</strong> to add</span>
+            <span>Alt + F to search</span>
+          </div>
+        </div>
+      </nav>
 
-        const ErrorBoundary = ({ children }) => {
-            const [error, setError] = useState(null);
-            useEffect(() => {
-                const handle = (e) => { console.error(e); setError(e.message || 'Unknown error'); };
-                window.addEventListener('error', handle);
-                return () => window.removeEventListener('error', handle);
-            }, []);
-            if (error) {
-                return (
-                    <div className="min-h-screen flex items-center justify-center p-6 text-center">
-                        <div className="max-w-md">
-                            <i className="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-6"></i>
-                            <h2 className="text-2xl font-bold mb-4">App Error</h2>
-                            <p className="text-slate-600 mb-6">{error}</p>
-                            <button onClick={() => { setError(null); window.location.reload(); }} className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700">
-                                Refresh
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
-            return children;
-        };
+      <section class="content">
+        <div class="content-header">
+          <div class="content-title-wrap">
+            <div class="content-title">
+              <span id="contentHeading">Customers</span>
+              <span id="contentMiniTag">Contacts</span>
+            </div>
+            <div class="content-subtitle" id="contentSubtitle">
+              Manage your customer list, keep phone and address details in sync with jobs.
+            </div>
+          </div>
+          <div class="content-actions">
+            <button class="btn btn-outline" type="button" id="exportBtn">
+              <span class="btn-icon-small">⭳</span>
+              Export JSON
+            </button>
+            <button class="btn btn-primary" type="button" id="addNewBtn">
+              <span class="btn-icon-small">＋</span>
+              Add new
+            </button>
+          </div>
+        </div>
 
-        function App() {
-            const [view, setView] = useState('dashboard');
-            const [tab, setTab] = useState('estimates');
-            const [jobs, setJobs] = useState([]);
-            const [company, setCompany] = useState({
-                name: "Dean's Handyman TX",
-                hourlyRate: 125,
-                phone: "",
-                email: "",
-                address: "Dallas, TX",
-                logo: "",
-                paymentLinks: { venmo: "", paypal: "", cashapp: "", square: "" }
-            });
-            const [selectedId, setSelectedId] = useState(null);
-            const [editingId, setEditingId] = useState(null);
-            const [form, setForm] = useState({
-                name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: []
-            });
-
-            useEffect(() => {
-                const savedJobs = localStorage.getItem('deans_jobs');
-                if (savedJobs) setJobs(JSON.parse(savedJobs));
-                const savedComp = localStorage.getItem('deans_company');
-                if (savedComp) setCompany(JSON.parse(savedComp));
-            }, []);
-
-            useEffect(() => { localStorage.setItem('deans_jobs', JSON.stringify(jobs)); }, [jobs]);
-            useEffect(() => { localStorage.setItem('deans_company', JSON.stringify(company)); }, [company]);
-
-            useEffect(() => {
-                const h = Number(form.hours) || 0;
-                if (h > 0) {
-                    const rate = Number(company.hourlyRate) || 125;
-                    setForm(f => ({ ...f, labor: (h * rate).toFixed(2) }));
-                }
-            }, [form.hours, company.hourlyRate]);
-
-            const handleSaveJob = (e) => {
-                e.preventDefault();
-                const hours = Number(form.hours) || 0;
-                const labor = hours > 0 ? hours * Number(company.hourlyRate || 125) : Number(form.labor) || 0;
-                const materials = Number(form.materials) || 0;
-                const job = {
-                    ...form,
-                    id: editingId || Date.now().toString(),
-                    hours, labor, materials,
-                    total: labor + materials,
-                    status: editingId ? jobs.find(j => j.id === editingId)?.status || 'Estimate' : 'Estimate',
-                    createdAt: editingId ? jobs.find(j => j.id === editingId)?.createdAt : new Date().toISOString(),
-                    photos: form.photos || []
-                };
-                setJobs(prev => editingId ? prev.map(j => j.id === editingId ? job : j) : [job, ...prev]);
-                resetForm();
-                setView('dashboard');
-            };
-
-            const resetForm = () => {
-                setForm({ name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: [] });
-                setEditingId(null);
-            };
-
-            const currentJob = jobs.find(j => j.id === selectedId);
-
-            const filteredJobs = jobs.filter(j => {
-                if (tab === 'estimates') return j.status === 'Estimate';
-                if (tab === 'active') return j.status === 'Active';
-                return j.status === 'Paid';
-            });
-
-            if (view === 'settings') {
-                const [localComp, setLocalComp] = useState({ ...company });
-                const fileRef = React.useRef();
-
-                const saveComp = () => {
-                    setCompany(localComp);
-                    setView('dashboard');
-                };
-
-                return (
-                    <div className="p-6 max-w-2xl mx-auto fade-in">
-                        <div className="flex justify-between mb-8">
-                            <button onClick={() => setView('dashboard')} className="text-blue-600 font-medium flex items-center">
-                                <i className="fa-solid fa-arrow-left mr-2"></i> Back
-                            </button>
-                            <button onClick={saveComp} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700">
-                                Save
-                            </button>
-                        </div>
-                        <h1 className="text-3xl font-bold mb-8">Business Profile</h1>
-
-                        <div className="bg-white p-8 rounded-3xl shadow border mb-8 text-center">
-                            <div className="h-32 w-32 mx-auto bg-slate-100 rounded-full overflow-hidden border-4 border-dashed border-slate-300 mb-4 flex items-center justify-center">
-                                {localComp.logo ? <img src={localComp.logo} className="w-full h-full object-cover" /> : <i className="fa-solid fa-image text-4xl text-slate-400" />}
-                            </div>
-                            <button type="button" onClick={() => fileRef.current.click()} className="text-blue-600 font-medium">Upload Logo</button>
-                            <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={e => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                    const reader = new FileReader();
-                                    reader.onload = () => setLocalComp({...localComp, logo: reader.result});
-                                    reader.readAsDataURL(file);
-                                }
-                            }} />
-                        </div>
-
-                        <div className="space-y-6 bg-white p-8 rounded-3xl shadow border">
-                            <input value={localComp.name} onChange={e => setLocalComp({...localComp, name: e.target.value})} placeholder="Business Name" className="w-full p-4 border rounded-xl" />
-                            <input type="number" value={localComp.hourlyRate} onChange={e => setLocalComp({...localComp, hourlyRate: e.target.value})} placeholder="Hourly Rate ($)" className="w-full p-4 border rounded-xl" />
-                            <input value={localComp.phone} onChange={e => setLocalComp({...localComp, phone: e.target.value})} placeholder="Phone" className="w-full p-4 border rounded-xl" />
-                            <input value={localComp.email} onChange={e => setLocalComp({...localComp, email: e.target.value})} placeholder="Email" className="w-full p-4 border rounded-xl" />
-                            <input value={localComp.address} onChange={e => setLocalComp({...localComp, address: e.target.value})} placeholder="Address / City" className="w-full p-4 border rounded-xl" />
-                        </div>
-
-                        <div className="mt-8 bg-white p-8 rounded-3xl shadow border space-y-6">
-                            <h2 className="text-xl font-bold">Payment Links</h2>
-                            <input value={localComp.paymentLinks.venmo || ''} onChange={e => setLocalComp({...localComp, paymentLinks: {...localComp.paymentLinks, venmo: e.target.value}})} placeholder="Venmo Link" className="w-full p-4 border rounded-xl" />
-                            <input value={localComp.paymentLinks.paypal || ''} onChange={e => setLocalComp({...localComp, paymentLinks: {...localComp.paymentLinks, paypal: e.target.value}})} placeholder="PayPal Link" className="w-full p-4 border rounded-xl" />
-                            <input value={localComp.paymentLinks.cashapp || ''} onChange={e => setLocalComp({...localComp, paymentLinks: {...localComp.paymentLinks, cashapp: e.target.value}})} placeholder="Cash App Link" className="w-full p-4 border rounded-xl" />
-                            <input value={localComp.paymentLinks.square || ''} onChange={e => setLocalComp({...localComp, paymentLinks: {...localComp.paymentLinks, square: e.target.value}})} placeholder="Square Link" className="w-full p-4 border rounded-xl" />
-                        </div>
-                    </div>
-                );
-            }
-
-            if (view === 'form') {
-                return (
-                    <div className="p-6 max-w-2xl mx-auto fade-in">
-                        <button onClick={() => { resetForm(); setView('dashboard'); }} className="mb-6 text-blue-600 font-medium flex items-center">
-                            <i className="fa-solid fa-arrow-left mr-2"></i> Cancel
-                        </button>
-                        <h1 className="text-3xl font-bold mb-8">{editingId ? 'Edit Job' : 'New Job'}</h1>
-                        <form onSubmit={handleSaveJob} className="space-y-8">
-                            <div className="bg-white p-8 rounded-3xl shadow border space-y-6">
-                                <input required value={form.name} onChange={e=>setForm({...form, name: e.target.value})} placeholder="Customer Name *" className="w-full p-5 border rounded-2xl" />
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <input required value={form.phone} onChange={e=>setForm({...form, phone: e.target.value})} placeholder="Phone *" className="w-full p-5 border rounded-2xl" />
-                                    <input value={form.email} onChange={e=>setForm({...form, email: e.target.value})} placeholder="Email" className="w-full p-5 border rounded-2xl" />
-                                </div>
-                                <input value={form.address} onChange={e=>setForm({...form, address: e.target.value})} placeholder="Job Address" className="w-full p-5 border rounded-2xl" />
-                            </div>
-
-                            <div className="bg-white p-8 rounded-3xl shadow border space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <input type="number" value={form.hours} onChange={e=>setForm({...form, hours: e.target.value})} placeholder="Est. Hours" className="w-full p-5 border rounded-2xl" />
-                                    <input type="number" value={form.labor} onChange={e=>setForm({...form, labor: e.target.value})} placeholder="Labor $" className="w-full p-5 border rounded-2xl" />
-                                    <input type="number" value={form.materials} onChange={e=>setForm({...form, materials: e.target.value})} placeholder="Materials $" className="w-full p-5 border rounded-2xl" />
-                                </div>
-                                <textarea value={form.description} onChange={e=>setForm({...form, description: e.target.value})} placeholder="Job description / notes..." rows="4" className="w-full p-5 border rounded-2xl"></textarea>
-                            </div>
-
-                            <div className="bg-white p-8 rounded-3xl shadow border">
-                                <h3 className="font-bold mb-4">Photos</h3>
-                                <input type="file" multiple accept="image/*" onChange={e => {
-                                    const files = Array.from(e.target.files);
-                                    Promise.all(files.map(f => new Promise(r => {
-                                        const reader = new FileReader();
-                                        reader.onload = () => r(reader.result);
-                                        reader.readAsDataURL(f);
-                                    }))).then(urls => setForm(f => ({...f, photos: [...f.photos, ...urls]})));
-                                }} className="w-full p-4 border rounded-xl" />
-                                <div className="grid grid-cols-3 gap-4 mt-6">
-                                    {form.photos.map((p, i) => (
-                                        <div key={i} className="relative">
-                                            <img src={p} alt="" className="w-full h-24 object-cover rounded-xl shadow" />
-                                            <button type="button" onClick={() => setForm(f => ({...f, photos: f.photos.filter((_, idx) => idx !== i)})} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">X</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-10 rounded-3xl text-white text-center shadow-xl">
-                                <p className="text-sm uppercase tracking-wider mb-2">Total Quote</p>
-                                <p className="text-5xl font-black">${(Number(form.labor || 0) + Number(form.materials || 0)).toFixed(2)}</p>
-                            </div>
-
-                            <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-3xl font-bold text-xl hover:bg-blue-700 transition">
-                                {editingId ? 'Update Job' : 'Create Job'}
-                            </button>
-                        </form>
-                    </div>
-                );
-            }
-
-            if (view === 'detail' && currentJob) {
-                const isPaid = currentJob.status === 'Paid';
-                const label = isPaid ? 'INVOICE' : 'ESTIMATE';
-
-                const send = (mode) => {
-                    const body = `${company.name} - ${label}\n\nTo: \( {currentJob.name}\n \){currentJob.address ? `Address: ${currentJob.address}\n` : ''}Description: \( {currentJob.description || 'N/A'}\n\nLabor: \[ {Number(currentJob.labor).toFixed(2)}\nMaterials: \]{Number(currentJob.materials).toFixed(2)}\nTotal: \[ {Number(currentJob.total).toFixed(2)}\n\n \){!isPaid ? 'Please reply to accept.' : 'Thank you!'}\n${company.phone ? `Call: ${company.phone}` : ''}`;
-                    const url = mode === 'email' ? `mailto:\( {currentJob.email}?subject= \){label} from \( {company.name}&body= \){encodeURIComponent(body)}` : `sms:\( {currentJob.phone}?body= \){encodeURIComponent(body)}`;
-                    window.open(url, '_blank');
-                };
-
-                const pdf = () => {
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF();
-                    doc.setFontSize(20);
-                    doc.text(company.name, 105, 20, { align: 'center' });
-                    if (company.logo) doc.addImage(company.logo, 'PNG', 80, 25, 50, 15);
-                    doc.setFontSize(10);
-                    doc.text([company.phone, company.email, company.address].filter(Boolean).join(' • '), 105, 40, { align: 'center' });
-                    doc.line(15, 50, 195, 50);
-
-                    doc.setFontSize(14);
-                    doc.text('Bill To:', 15, 60);
-                    doc.setFontSize(12);
-                    doc.text(currentJob.name, 15, 68);
-                    doc.text(currentJob.address || '', 15, 74);
-                    doc.text(`${label} Date: ${new Date(currentJob.createdAt).toLocaleDateString()}`, 150, 60, { align: 'right' });
-
-                    let y = 90;
-                    doc.text('Description:', 15, y); y += 8;
-                    const lines = doc.splitTextToSize(currentJob.description || 'N/A', 180);
-                    doc.text(lines, 15, y); y += lines.length * 6 + 10;
-
-                    if (currentJob.photos.length > 0) {
-                        doc.text('Photos:', 15, y); y += 8;
-                        currentJob.photos.slice(0, 3).forEach((p, i) => {
-                            if (y > 240) { doc.addPage(); y = 20; }
-                            doc.addImage(p, 'JPEG', 15 + i*60, y, 50, 35);
-                        });
-                        y += 45;
-                    }
-
-                    doc.text(`Labor: \]{Number(currentJob.labor).toFixed(2)}`, 15, y); y += 10;
-                    doc.text(`Materials: \[ {Number(currentJob.materials).toFixed(2)}`, 15, y); y += 10;
-                    doc.setFontSize(16);
-                    doc.text(`TOTAL: \]{Number(currentJob.total).toFixed(2)}`, 15, y);
-
-                    doc.save(`\( {label}- \){currentJob.name.replace(/\s+/g, '-')}.pdf`);
-                };
-
-                return (
-                    <div className="p-6 max-w-3xl mx-auto fade-in">
-                        <button onClick={() => setView('dashboard')} className="mb-6 text-blue-600 font-medium flex items-center">
-                            <i className="fa-solid fa-arrow-left mr-2"></i> Back to Dashboard
-                        </button>
-                        <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
-                            <div className="p-8 bg-gradient-to-r from-slate-800 to-slate-900 text-white">
-                                {company.logo && <img src={company.logo} alt="logo" className="h-16 mb-4 object-contain" />}
-                                <h1 className="text-4xl font-black">{company.name}</h1>
-                                <p className="text-slate-300 mt-2">{company.address}</p>
-                            </div>
-                            <div className="p-8">
-                                <div className="flex justify-between items-start mb-10">
-                                    <div>
-                                        <p className="text-sm text-slate-500 uppercase tracking-wide">Bill To</p>
-                                        <h2 className="text-3xl font-bold mt-1">{currentJob.name}</h2>
-                                        <p className="text-slate-600 mt-1">{currentJob.address}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <h2 className="text-4xl font-black text-slate-900">{label}</h2>
-                                        <p className="text-sm text-slate-500 mt-2">Date: {new Date(currentJob.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-
-                                <div className="mb-10">
-                                    <p className="text-sm text-slate-500 uppercase tracking-wide mb-3">Job Details</p>
-                                    <p className="text-lg whitespace-pre-line">{currentJob.description || 'No description'}</p>
-                                </div>
-
-                                {currentJob.photos.length > 0 && (
-                                    <div className="mb-10">
-                                        <p className="text-sm text-slate-500 uppercase tracking-wide mb-3">Photos</p>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                            {currentJob.photos.map((p, i) => <img key={i} src={p} alt="" className="rounded-xl shadow object-cover h-40 w-full" />)}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="space-y-6 mb-12">
-                                    <div className="flex justify-between py-4 border-b">
-                                        <span className="text-slate-600">Labor</span>
-                                        <span className="font-bold">${Number(currentJob.labor).toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between py-4 border-b">
-                                        <span className="text-slate-600">Materials</span>
-                                        <span className="font-bold">${Number(currentJob.materials).toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between pt-6">
-                                        <span className="text-2xl font-bold">TOTAL</span>
-                                        <span className="text-4xl font-extrabold text-blue-600">${Number(currentJob.total).toFixed(2)}</span>
-                                    </div>
-                                </div>
-
-                                {isPaid && company.paymentLinks && Object.values(company.paymentLinks).some(l => l) && (
-                                    <div className="bg-slate-900 text-white p-8 rounded-3xl">
-                                        <p className="text-center text-blue-300 uppercase text-sm font-bold tracking-wider mb-6">Payment Options</p>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            {company.paymentLinks.venmo && <a href={company.paymentLinks.venmo} target="_blank" className="bg-white/10 p-5 rounded-2xl text-center hover:bg-white/20">Venmo</a>}
-                                            {company.paymentLinks.paypal && <a href={company.paymentLinks.paypal} target="_blank" className="bg-white/10 p-5 rounded-2xl text-center hover:bg-white/20">PayPal</a>}
-                                            {company.paymentLinks.cashapp && <a href={company.paymentLinks.cashapp} target="_blank" className="bg-white/10 p-5 rounded-2xl text-center hover:bg-white/20">Cash App</a>}
-                                            {company.paymentLinks.square && <a href={company.paymentLinks.square} target="_blank" className="col-span-2 bg-blue-600 p-5 rounded-2xl text-center hover:bg-blue-700">Square</a>}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="fixed bottom-8 left-4 right-4 md:left-auto md:right-8 md:w-auto flex gap-4 bg-white p-4 rounded-3xl shadow-2xl border">
-                            <button onClick={() => send('email')} className="flex-1 bg-slate-800 text-white py-5 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-900">
-                                <i className="fa-solid fa-envelope"></i> Email
-                            </button>
-                            <button onClick={() => send('sms')} className="flex-1 bg-blue-600 text-white py-5 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700">
-                                <i className="fa-solid fa-comment-dots"></i> Text
-                            </button>
-                            <button onClick={pdf} className="flex-1 bg-green-600 text-white py-5 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-green-700">
-                                <i className="fa-solid fa-file-pdf"></i> PDF
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="min-h-screen pb-32">
-                    <header className="bg-slate-900 text-white p-8">
-                        <div className="max-w-5xl mx-auto flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                {company.logo ? <img src={company.logo} alt="logo" className="h-14 object-contain rounded" /> : <i className="fa-solid fa-tools text-4xl text-blue-400" />}
-                                <div>
-                                    <h1 className="text-3xl font-black">{company.name}</h1>
-                                    <p className="text-slate-400">{company.address}</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setView('settings')} className="p-4 bg-white/10 rounded-full hover:bg-white/20">
-                                <i className="fa-solid fa-gear text-2xl"></i>
-                            </button>
-                        </div>
-                    </header>
-
-                    <main className="max-w-5xl mx-auto p-6">
-                        <div className="bg-white rounded-full p-2 shadow mb-8 flex">
-                            {['estimates', 'active', 'paid'].map(t => (
-                                <button key={t} onClick={() => setTab(t)} className={`flex-1 py-4 rounded-full font-bold ${tab === t ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
-                                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                                </button>
-                            ))}
-                        </div>
-
-                        {filteredJobs.length === 0 ? (
-                            <div className="text-center py-20 text-slate-500">
-                                <i className="fa-solid fa-folder-open text-7xl mb-6 opacity-50"></i>
-                                <p className="text-2xl font-medium">No jobs in this category yet</p>
-                            </div>
-                        ) : filteredJobs.map(job => (
-                            <div key={job.id} className="bg-white rounded-3xl shadow mb-6 p-6 hover:shadow-xl transition">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="text-2xl font-bold">{job.name}</h3>
-                                        <p className="text-slate-600 mt-1">{job.address || 'No address'}</p>
-                                        {job.photos.length > 0 && <p className="text-blue-600 text-sm mt-1">{job.photos.length} photo{job.photos.length > 1 ? 's' : ''}</p>}
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-3xl font-black text-blue-600">${Number(job.total).toFixed(0)}</p>
-                                        <p className="text-sm text-slate-500 mt-1">{job.status}</p>
-                                    </div>
-                                </div>
-                                <div className="mt-6 flex flex-wrap gap-3">
-                                    <button onClick={() => { setSelectedId(job.id); setView('detail'); }} className="flex-1 min-w-[100px] bg-blue-50 text-blue-700 py-4 rounded-2xl font-bold hover:bg-blue-100">
-                                        View
-                                    </button>
-                                    <button onClick={() => {
-                                        setForm(job);
-                                        setEditingId(job.id);
-                                        setView('form');
-                                    }} className="flex-1 min-w-[100px] bg-yellow-50 text-yellow-700 py-4 rounded-2xl font-bold hover:bg-yellow-100">
-                                        Edit
-                                    </button>
-                                    <button onClick={() => {
-                                        if (window.confirm('Delete this job?')) setJobs(jobs.filter(j => j.id !== job.id));
-                                    }} className="flex-1 min-w-[100px] bg-red-50 text-red-700 py-4 rounded-2xl font-bold hover:bg-red-100">
-                                        Delete
-                                    </button>
-                                </div>
-                                <div className="mt-4 flex gap-3">
-                                    {job.status === 'Estimate' && <button onClick={() => setJobs(jobs.map(j => j.id === job.id ? {...j, status: 'Active'} : j))} className="flex-1 bg-slate-700 text-white py-4 rounded-2xl font-bold hover:bg-slate-800">Mark Active</button>}
-                                    {job.status === 'Active' && <button onClick={() => setJobs(jobs.map(j => j.id === job.id ? {...j, status: 'Paid'} : j))} className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold hover:bg-green-700">Mark Paid</button>}
-                                    {job.status === 'Paid' && <div className="flex-1 text-center py-4 text-green-600 font-bold">Completed</div>}
-                                </div>
-                            </div>
-                        ))}
-                    </main>
-
-                    <button onClick={() => { resetForm(); setView('form'); }} className="fixed bottom-8 right-8 bg-blue-600 text-white w-20 h-20 rounded-full shadow-2xl flex items-center justify-center text-4xl hover:bg-blue-700 z-50">
-                        <i className="fa-solid fa-plus"></i>
-                    </button>
+        <div class="dashboard-grid">
+          <div>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-label">
+                  <span>Total customers</span>
+                  <span class="stat-chip">CRM</span>
                 </div>
-            );
-        }
+                <div class="stat-value">
+                  <span id="statCustomers">0</span>
+                  <span class="stat-unit">accounts</span>
+                </div>
+                <div class="stat-trend">
+                  <span class="trend-badge">↑ focus</span>
+                  <span class="trend-muted">Keep notes updated</span>
+                </div>
+                <div class="stat-meta">
+                  <span>Primary contacts</span>
+                  <span class="pill-mini" id="statCustomerPrimary">0 primary</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">
+                  <span>Active jobs</span>
+                  <span class="stat-chip">Scheduling</span>
+                </div>
+                <div class="stat-value">
+                  <span id="statJobsOpen">0</span>
+                  <span class="stat-unit">open</span>
+                </div>
+                <div class="stat-trend">
+                  <span class="trend-badge">⚡ pipeline</span>
+                  <span class="trend-muted">Convert quotes quickly</span>
+                </div>
+                <div class="stat-meta">
+                  <span>Completed</span>
+                  <span class="pill-mini" id="statJobsDone">0 closed</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">
+                  <span>Outstanding</span>
+                  <span class="stat-chip">Receivables</span>
+                </div>
+                <div class="stat-value">
+                  <span id="statOutstanding">$0</span>
+                </div>
+                <div class="stat-trend">
+                  <span class="trend-badge">⏱ 30d</span>
+                  <span class="trend-muted">Aim for < 15 days</span>
+                </div>
+                <div class="stat-meta">
+                  <span>Overdue</span>
+                  <span class="pill-mini" id="statOverdue">$0 late</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">
+                  <span>Collected</span>
+                  <span class="stat-chip">Cashflow</span>
+                </div>
+                <div class="stat-value">
+                  <span id="statCollected">$0</span>
+                </div>
+                <div class="stat-trend">
+                  <span class="trend-badge">✔ settled</span>
+                  <span class="trend-muted">Payments logged</span>
+                </div>
+                <div class="stat-meta">
+                  <span>This week</span>
+                  <span class="pill-mini" id="statWeekly">$0 received</span>
+                </div>
+              </div>
+            </div>
 
-        ReactDOM.createRoot(document.getElementById('root')).render(
-            <ErrorBoundary>
-                <App />
-            </ErrorBoundary>
+            <div class="view-card">
+              <div class="view-header">
+                <span>Quick views</span>
+                <span>Filter by focus area</span>
+              </div>
+              <div class="view-chips">
+                <button class="view-chip active" data-view="all">
+                  <span class="view-chip-dot"></span>
+                  All records
+                </button>
+                <button class="view-chip" data-view="open">
+                  <span class="view-chip-dot"></span>
+                  Open items
+                </button>
+                <button class="view-chip" data-view="late">
+                  <span class="view-chip-dot"></span>
+                  At-risk & overdue
+                </button>
+                <button class="view-chip" data-view="today">
+                  <span class="view-chip-dot"></span>
+                  Updated today
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-header-left">
+                <div class="table-title">
+                  <span id="tableTitle">Customer list</span>
+                  <span class="table-badge" id="tableBadge">Live</span>
+                </div>
+                <div class="table-subtitle" id="tableSubtitle">
+                  Use Alt + N to add, click rows to edit.
+                </div>
+              </div>
+              <div class="table-header-actions">
+                <div class="table-search">
+                  <span class="table-search-icon">⌕</span>
+                  <input type="text" id="searchInput" placeholder="Search..." />
+                </div>
+                <button class="btn btn-outline" type="button" id="clearSearchBtn">
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div class="table-body">
+              <table>
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span id="modalTitle">Add customer</span>
+          <span class="modal-tag" id="modalTag">New record</span>
+        </div>
+        <button class="modal-close" type="button" id="modalCloseBtn" aria-label="Close">
+          ✕
+        </button>
+      </div>
+      <form id="entityForm">
+        <div class="modal-body" id="modalBodyFields"></div>
+        <div class="modal-footer">
+          <div class="modal-footer-left">
+            <span id="modalHint">Fields marked <span>*</span> are required.</span>
+            <span class="badge-keyboard">Enter to save • Esc to close</span>
+          </div>
+          <div class="modal-footer-right">
+            <button type="button" class="btn-ghost" id="modalCancelBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="modalSaveBtn">
+              <span class="btn-icon-small">✔</span>
+              Save record
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <span class="btn-icon-small">✔</span>
+    <span id="toastMessage">Saved</span>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "contractorDashboardData.v1";
+
+    const ENTITY_CONFIG = {
+      customers: {
+        label: "Customers",
+        miniTag: "Contacts",
+        subtitle:
+          "Manage your customer list, keep phone and address details in sync with jobs.",
+        tableTitle: "Customer list",
+        tableSubtitle: "Use Alt + N to add, click rows to edit.",
+        badge: "Live",
+        columns: [
+          { key: "name", label: "Customer", primary: true },
+          { key: "phone", label: "Phone" },
+          { key: "email", label: "Email" },
+          { key: "city", label: "City" },
+          { key: "notes", label: "Notes", type: "text" }
+        ],
+        formFields: [
+          {
+            key: "name",
+            label: "Customer name",
+            required: true,
+            placeholder: "e.g. Acme Properties LLC"
+          },
+          {
+            key: "phone",
+            label: "Phone",
+            required: true,
+            placeholder: "(555) 123‑4567"
+          },
+          {
+            key: "email",
+            label: "Email",
+            type: "email",
+            placeholder: "contact@example.com"
+          },
+          {
+            key: "city",
+            label: "City",
+            placeholder: "Katy, TX"
+          },
+          {
+            key: "notes",
+            label: "Notes",
+            type: "textarea",
+            placeholder: "Key contacts, access instructions, etc."
+          }
+        ]
+      },
+      jobs: {
+        label: "Jobs",
+        miniTag: "Work orders",
+        subtitle:
+          "Track scopes, status, and billing association per job.",
+        tableTitle: "Job board",
+        tableSubtitle: "Keep scopes clear and link jobs to customers.",
+        badge: "Schedule",
+        columns: [
+          { key: "title", label: "Job", primary: true },
+          { key: "customer", label: "Customer" },
+          { key: "status", label: "Status", type: "statusJobs" },
+          { key: "scheduledDate", label: "Scheduled" },
+          { key: "budget", label: "Budget" }
+        ],
+        formFields: [
+          {
+            key: "title",
+            label: "Job title",
+            required: true,
+            placeholder: "e.g. Roof replacement – Elm St."
+          },
+          {
+            key: "customer",
+            label: "Customer",
+            placeholder: "Customer name"
+          },
+          {
+            key: "status",
+            label: "Status",
+            type: "select",
+            required: true,
+            options: ["Planned", "Scheduled", "In progress", "Completed", "On hold"]
+          },
+          {
+            key: "scheduledDate",
+            label: "Scheduled date",
+            type: "date"
+          },
+          {
+            key: "budget",
+            label: "Estimated value ($)",
+            placeholder: "e.g. 8500"
+          },
+          {
+            key: "notes",
+            label: "Notes",
+            type: "textarea",
+            placeholder: "Scope, materials, access notes, etc."
+          }
+        ]
+      },
+      invoices: {
+        label: "Invoices",
+        miniTag: "Billing",
+        subtitle:
+          "Issue invoices, track status, and connect them to jobs and customers.",
+        tableTitle: "Invoice register",
+        tableSubtitle: "Track issued, due, and paid invoices.",
+        badge: "Receivables",
+        columns: [
+          { key: "number", label: "Invoice #", primary: true },
+          { key: "customer", label: "Customer" },
+          { key: "job", label: "Job" },
+          { key: "amount", label: "Amount", type: "currency" },
+          { key: "status", label: "Status", type: "statusInvoices" },
+          { key: "dueDate", label: "Due" }
+        ],
+        formFields: [
+          {
+            key: "number",
+            label: "Invoice number",
+            required: true,
+            placeholder: "e.g. INV‑2026‑001"
+          },
+          {
+            key: "customer",
+            label: "Customer",
+            required: true,
+            placeholder: "Customer name"
+          },
+          {
+            key: "job",
+            label: "Job",
+            placeholder: "Related job (optional)"
+          },
+          {
+            key: "amount",
+            label: "Amount ($)",
+            required: true,
+            placeholder: "e.g. 1250"
+          },
+          {
+            key: "status",
+            label: "Status",
+            type: "select",
+            required: true,
+            options: ["Draft", "Sent", "Due", "Paid", "Overdue"]
+          },
+          {
+            key: "issueDate",
+            label: "Issue date",
+            type: "date"
+          },
+          {
+            key: "dueDate",
+            label: "Due date",
+            type: "date"
+          },
+          {
+            key: "notes",
+            label: "Notes",
+            type: "textarea",
+            placeholder: "Payment terms, partials, etc."
+          }
+        ]
+      },
+      payments: {
+        label: "Payments",
+        miniTag: "Cashflow",
+        subtitle:
+          "Record incoming payments and keep cashflow aligned with invoices.",
+        tableTitle: "Payment log",
+        tableSubtitle: "Match payments to invoices and methods.",
+        badge: "Cashflow",
+        columns: [
+          { key: "date", label: "Date", primary: true },
+          { key: "customer", label: "Customer" },
+          { key: "invoiceNumber", label: "Invoice #" },
+          { key: "amount", label: "Amount", type: "currency" },
+          { key: "method", label: "Method" },
+          { key: "reference", label: "Reference" }
+        ],
+        formFields: [
+          {
+            key: "date",
+            label: "Payment date",
+            type: "date",
+            required: true
+          },
+          {
+            key: "customer",
+            label: "Customer",
+            required: true,
+            placeholder: "Customer name"
+          },
+          {
+            key: "invoiceNumber",
+            label: "Invoice #",
+            placeholder: "Related invoice"
+          },
+          {
+            key: "amount",
+            label: "Amount ($)",
+            required: true,
+            placeholder: "e.g. 750"
+          },
+          {
+            key: "method",
+            label: "Payment method",
+            type: "select",
+            options: ["Bank transfer", "Card", "Cash", "Check", "Other"]
+          },
+          {
+            key: "reference",
+            label: "Reference / memo",
+            placeholder: "Transaction ID or internal note"
+          }
+        ]
+      }
+    };
+
+    let state = {
+      activeTab: "customers",
+      data: {
+        customers: [],
+        jobs: [],
+        invoices: [],
+        payments: []
+      },
+      editing: {
+        tab: null,
+        id: null
+      },
+      viewFilter: "all",
+      search: ""
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.data) {
+            state = Object.assign(state, parsed);
+          }
+        } else {
+          seedDemoData();
+        }
+      } catch (err) {
+        console.error("Failed to load state", err);
+        seedDemoData();
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            activeTab: state.activeTab,
+            data: state.data
+          })
         );
-    </script>
-</body>
-</html>
+      } catch (err) {
+        console.error("Failed to save state", err);
+      }
+    }
+
+    function seedDemoData() {
+      const today = new Date();
+      const fmtDate = (d) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+
+      const demoCustomers = [
+        {
+          id: generateId(),
+          name: "Acme Properties LLC",
+          phone: "(281) 555‑0142",
+          email: "ops@acmeproperties.com",
+          city: "Katy, TX",
+          notes: "Multi‑unit portfolio, prefers email updates."
+        },
+        {
+          id: generateId(),
+          name: "Lone Star Retail Group",
+          phone: "(832) 555‑2389",
+          email: "maintenance@lonestarretail.com",
+          city: "Houston, TX",
+          notes: "After‑hours access for mall locations."
+        }
+      ];
+
+      const demoJobs = [
+        {
+          id: generateId(),
+          title: "Roof repair – Willow Creek",
+          customer: "Acme Properties LLC",
+          status: "In progress",
+          scheduledDate: fmtDate(today),
+          budget: "9800",
+          notes: "Insurance claim, materials onsite."
+        },
+        {
+          id: generateId(),
+          title: "Parking lot lighting upgrade",
+          customer: "Lone Star Retail Group",
+          status: "Scheduled",
+          scheduledDate: fmtDate(
+            new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000)
+          ),
+          budget: "4200",
+          notes: "Night work only."
+        },
+        {
+          id: generateId(),
+          title: "Gutter cleaning – Elm Townhomes",
+          customer: "Acme Properties LLC",
+          status: "Completed",
+          scheduledDate: fmtDate(
+            new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+          ),
+          budget: "1600",
+          notes: "Annual maintenance."
+        }
+      ];
+
+      const demoInvoices = [
+        {
+          id: generateId(),
+          number: "INV‑2026‑001",
+          customer: "Acme Properties LLC",
+          job: "Gutter cleaning – Elm Townhomes",
+          amount: "1600",
+          status: "Paid",
+          issueDate: fmtDate(
+            new Date(today.getTime() - 8 * 24 * 60 * 60 * 1000)
+          ),
+          dueDate: fmtDate(
+            new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000)
+          ),
+          notes: "Paid in full via ACH."
+        },
+        {
+          id: generateId(),
+          number: "INV‑2026‑002",
+          customer: "Lone Star Retail Group",
+          job: "Parking lot lighting upgrade",
+          amount: "4200",
+          status: "Sent",
+          issueDate: fmtDate(today),
+          dueDate: fmtDate(
+            new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000)
+          ),
+          notes: "Net 15 days."
+        },
+        {
+          id: generateId(),
+          number: "INV‑2026‑003",
+          customer: "Acme Properties LLC",
+          job: "Roof repair – Willow Creek",
+          amount: "9800",
+          status: "Due",
+          issueDate: fmtDate(
+            new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000)
+          ),
+          dueDate: fmtDate(
+            new Date(today.getTime() + 12 * 24 * 60 * 60 * 1000)
+          ),
+          notes: "Partial payment expected."
+        }
+      ];
+
+      const demoPayments = [
+        {
+          id: generateId(),
+          date: fmtDate(
+            new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000)
+          ),
+          customer: "Acme Properties LLC",
+          invoiceNumber: "INV‑2026‑001",
+          amount: "1600",
+          method: "Bank transfer",
+          reference: "ACH‑9182"
+        }
+      ];
+
+      state.data.customers = demoCustomers;
+      state.data.jobs = demoJobs;
+      state.data.invoices = demoInvoices;
+      state.data.payments = demoPayments;
+      saveState();
+    }
+
+    function generateId() {
+      return (
+        Date.now().toString(36) +
+        Math.random().toString(36).substring(2, 8)
+      );
+    }
+
+    function formatCurrency(amount) {
+      if (amount === undefined || amount === null || amount === "") {
+        return "$0";
+      }
+      const num = Number(amount);
+      if (Number.isNaN(num)) return `$${amount}`;
+      return num.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 2
+      });
+    }
+
+    function computeStats() {
+      const { customers, jobs, invoices, payments } = state.data;
+
+      const primaryCount = customers.length;
+
+      let jobsOpen = 0;
+      let jobsCompleted = 0;
+      jobs.forEach((job) => {
+        if (job.status === "Completed") jobsCompleted++;
+        else jobsOpen++;
+      });
+
+      let outstanding = 0;
+      let overdue = 0;
+      const today = new Date();
+      invoices.forEach((inv) => {
+        const amount = Number(inv.amount) || 0;
+        if (inv.status === "Paid" || inv.status === "Draft") return;
+        outstanding += amount;
+        if (inv.status === "Overdue") {
+          overdue += amount;
+        } else if (inv.dueDate) {
+          const due = new Date(inv.dueDate);
+          if (due < today) overdue += amount;
+        }
+      });
+
+      let collected = 0;
+      let weekly = 0;
+      const weekAgo = new Date(
+        today.getTime() - 7 * 24 * 60 * 60 * 1000
+      );
+      payments.forEach((p) => {
+        const amount = Number(p.amount) || 0;
+        collected += amount;
+        if (p.date) {
+          const d = new Date(p.date);
+          if (d >= weekAgo && d <= today) weekly += amount;
+        }
+      });
+
+      document.getElementById("statCustomers").textContent =
+        customers.length;
+      document.getElementById(
+        "statCustomerPrimary"
+      ).textContent = `${primaryCount} primary`;
+      document.getElementById("statJobsOpen").textContent = jobsOpen;
+      document.getElementById(
+        "statJobsDone"
+      ).textContent = `${jobsCompleted} closed`;
+      document.getElementById(
+        "statOutstanding"
+      ).textContent = formatCurrency(outstanding);
+      document.getElementById(
+        "statOverdue"
+      ).textContent = `${formatCurrency(overdue)} late`;
+      document.getElementById(
+        "statCollected"
+      ).textContent = formatCurrency(collected);
+      document.getElementById(
+        "statWeekly"
+      ).textContent = `${formatCurrency(weekly)} received`;
+    }
+
+    function renderCounts() {
+      ["customers", "jobs", "invoices", "payments"].forEach((tab) => {
+        const el = document.getElementById(`${tab}Count`);
+        if (el) el.textContent = state.data[tab].length;
+      });
+    }
+
+    function renderHeaderForTab(tab) {
+      const cfg = ENTITY_CONFIG[tab];
+      document.getElementById("contentHeading").textContent = cfg.label;
+      document.getElementById("contentMiniTag").textContent = cfg.miniTag;
+      document.getElementById("contentSubtitle").textContent =
+        cfg.subtitle;
+      document.getElementById("tableTitle").textContent =
+        cfg.tableTitle;
+      document.getElementById("tableSubtitle").textContent =
+        cfg.tableSubtitle;
+      document.getElementById("tableBadge").textContent = cfg.badge;
+    }
+
+    function renderTableHead() {
+      const cfg = ENTITY_CONFIG[state.activeTab];
+      const head = document.getElementById("tableHead");
+      head.innerHTML = "";
+      const tr = document.createElement("tr");
+      cfg.columns.forEach((col) => {
+        const th = document.createElement("th");
+        th.textContent = col.label;
+        tr.appendChild(th);
+      });
+      const thActions = document.createElement("th");
+      thActions.textContent = "Actions";
+      tr.appendChild(thActions);
+      head.appendChild(tr);
+    }
+
+    function rowMatchesViewFilter(row) {
+      const { viewFilter } = state;
+      if (viewFilter === "all") return true;
+
+      const today = new Date();
+      const todayISO = today.toISOString().slice(0, 10);
+
+      if (viewFilter === "open") {
+        if (state.activeTab === "jobs") {
+          return row.status && row.status !== "Completed";
+        }
+        if (state.activeTab === "invoices") {
+          return (
+            row.status &&
+            row.status !== "Paid" &&
+            row.status !== "Draft"
+          );
+        }
+        return true;
+      }
+
+      if (viewFilter === "late") {
+        if (state.activeTab === "invoices") {
+          if (row.status === "Overdue") return true;
+          if (!row.dueDate) return false;
+          const due = new Date(row.dueDate);
+          return due < today && row.status !== "Paid";
+        }
+        return false;
+      }
+
+      if (viewFilter === "today") {
+        if (row.updatedAt) {
+          return row.updatedAt.slice(0, 10) === todayISO;
+        }
+        return false;
+      }
+
+      return true;
+    }
+
+    function rowMatchesSearch(row) {
+      const q = state.search.trim().toLowerCase();
+      if (!q) return true;
+      return Object.values(row).some((value) => {
+        if (value == null) return false;
+        return String(value).toLowerCase().includes(q);
+      });
+    }
+
+    function renderTableBody() {
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+      const rows = state.data[state.activeTab] || [];
+      const cfg = ENTITY_CONFIG[state.activeTab];
+
+      const filtered = rows.filter(
+        (r) => rowMatchesViewFilter(r) && rowMatchesSearch(r)
+      );
+
+      if (filtered.length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = cfg.columns.length + 1;
+        td.className = "table-empty";
+        td.textContent =
+          "No records yet. Use the Add new button or Alt + N to create your first entry.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      filtered.forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.dataset.id = row.id;
+
+        cfg.columns.forEach((col) => {
+          const td = document.createElement("td");
+          const value = row[col.key] ?? "";
+          if (col.type === "currency") {
+            td.textContent = formatCurrency(value);
+          } else if (col.type === "statusInvoices") {
+            const span = document.createElement("span");
+            span.className = "cell-pill";
+            const dot = document.createElement("span");
+            dot.className = "cell-dot";
+            span.appendChild(dot);
+            const text = document.createElement("span");
+            text.textContent = value || "–";
+            span.appendChild(text);
+            const status = String(value || "").toLowerCase();
+            if (status === "paid") {
+              span.classList.add("status-paid");
+            } else if (status === "overdue") {
+              span.classList.add("status-late");
+            } else if (status === "due" || status === "sent") {
+              span.classList.add("status-due");
+            } else {
+              span.classList.add("status-open");
+            }
+            td.appendChild(span);
+          } else if (col.type === "statusJobs") {
+            const span = document.createElement("span");
+            span.className = "cell-pill status-open";
+            const dot = document.createElement("span");
+            dot.className = "cell-dot";
+            span.appendChild(dot);
+            const text = document.createElement("span");
+            text.textContent = value || "–";
+            span.appendChild(text);
+            td.appendChild(span);
+          } else {
+            td.textContent = value || "—";
+            if (!col.primary) {
+              td.classList.add("cell-muted");
+            }
+          }
+          tr.appendChild(td);
+        });
+
+        const tdActions = document.createElement("td");
+        const actions = document.createElement("div");
+        actions.className = "table-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "btn-table";
+        editBtn.innerHTML = '<span>✎</span> Edit';
+        editBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openModalForEdit(row.id);
+        });
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "btn-table danger";
+        deleteBtn.innerHTML = '<span>🗑</span> Delete';
+        deleteBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          confirmDelete(row.id);
+        });
+
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+        tdActions.appendChild(actions);
+        tr.appendChild(tdActions);
+
+        tr.addEventListener("click", () => {
+          openModalForEdit(row.id);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function setActiveTab(tab) {
+      state.activeTab = tab;
+      state.search = "";
+      document.getElementById("searchInput").value = "";
+      document
+        .querySelectorAll(".tab")
+        .forEach((el) =>
+          el.classList.toggle("active", el.dataset.tab === tab)
+        );
+      renderHeaderForTab(tab);
+      renderTableHead();
+      renderTableBody();
+      computeStats();
+      saveState();
+    }
+
+    function openModalForAdd() {
+      const cfg = ENTITY_CONFIG[state.activeTab];
+      state.editing = { tab: state.activeTab, id: null };
+      document.getElementById(
+        "modalTitle"
+      ).textContent = `Add ${cfg.label.slice(0, -1).toLowerCase()}`;
+      document.getElementById("modalTag").textContent = "New record";
+      document.getElementById("modalHint").innerHTML =
+        'Fields marked <span>*</span> are required.';
+      renderModalFields(cfg.formFields, {});
+      showModal();
+    }
+
+    function openModalForEdit(id) {
+      const cfg = ENTITY_CONFIG[state.activeTab];
+      const item =
+        state.data[state.activeTab].find((row) => row.id === id) || {};
+      state.editing = { tab: state.activeTab, id };
+      document.getElementById(
+        "modalTitle"
+      ).textContent = `Edit ${cfg.label.slice(0, -1).toLowerCase()}`;
+      document.getElementById("modalTag").textContent = "Existing record";
+      document.getElementById(
+        "modalHint"
+      ).textContent = "Update fields and save to apply changes.";
+      renderModalFields(cfg.formFields, item);
+      showModal();
+    }
+
+    function renderModalFields(fields, values) {
+      const body = document.getElementById("modalBodyFields");
+      body.innerHTML = "";
+
+      const pairs = [];
+      for (let i = 0; i < fields.length; i += 2) {
+        pairs.push(fields.slice(i, i + 2));
+      }
+
+      pairs.forEach((pair) => {
+        const row = document.createElement("div");
+        row.className = "modal-row";
+        pair.forEach((field) => {
+          const wrap = document.createElement("div");
+          wrap.className = "modal-field";
+
+          const label = document.createElement("label");
+          label.className = "modal-label";
+          label.htmlFor = `field-${field.key}`;
+          label.innerHTML =
+            field.label +
+            (field.required ? ' <span>*</span>' : "");
+          wrap.appendChild(label);
+
+          const value = values[field.key] || "";
+
+          if (field.type === "textarea") {
+            const ta = document.createElement("textarea");
+            ta.id = `field-${field.key}`;
+            ta.name = field.key;
+            ta.className = "modal-textarea";
+            ta.placeholder = field.placeholder || "";
+            ta.value = value;
+            wrap.appendChild(ta);
+          } else if (field.type === "select") {
+            const select = document.createElement("select");
+            select.id = `field-${field.key}`;
+            select.name = field.key;
+            select.className = "modal-select";
+            const empty = document.createElement("option");
+            empty.value = "";
+            empty.textContent = "Select…";
+            select.appendChild(empty);
+            (field.options || []).forEach((opt) => {
+              const option = document.createElement("option");
+              option.value = opt;
+              option.textContent = opt;
+              if (opt === value) option.selected = true;
+              select.appendChild(option);
+            });
+            wrap.appendChild(select);
+          } else {
+            const input = document.createElement("inpu
