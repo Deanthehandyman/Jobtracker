@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Job Tracker</title>
+    <title>Dean's Job Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -18,11 +18,9 @@
             background-color: #f8fafc;
             overscroll-behavior: none;
         }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
         input, textarea, select { font-size: 16px !important; } 
         .animate-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .invoice-shadow { box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 <body>
@@ -31,7 +29,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- SETTINGS VIEW ---
         const SettingsView = ({ company, onSave, onBack }) => {
             const [localCompany, setLocalCompany] = useState({...company});
             const fileRef = useRef(null);
@@ -39,22 +36,20 @@
             return (
                 <div className="p-6 pb-32 animate-in max-w-xl mx-auto">
                     <div className="flex justify-between items-center mb-8">
-                        <button onClick={onBack} className="text-slate-400 font-bold text-xs uppercase tracking-widest">
-                            <i className="fa-solid fa-arrow-left mr-2"></i> Dashboard
+                        <button onClick={onBack} className="text-slate-500 hover:text-slate-700 font-semibold text-sm flex items-center">
+                            <i className="fa-solid fa-arrow-left mr-2"></i> Back to Dashboard
                         </button>
-                        <button onClick={() => onSave(localCompany)} className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest shadow-lg">
-                            Save Profile
+                        <button onClick={() => onSave(localCompany)} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-md transition">
+                            Save Changes
                         </button>
                     </div>
-                    
-                    <h2 className="text-3xl font-extrabold mb-8 tracking-tighter">Business Setup</h2>
-                    
-                    <div className="space-y-6">
-                        <div className="bg-white p-8 rounded-[3rem] border shadow-sm flex flex-col items-center">
-                            <div className="h-24 w-24 bg-slate-50 rounded-3xl mb-4 overflow-hidden border-2 border-dashed border-slate-200 flex items-center justify-center">
-                                {localCompany.logo ? <img src={localCompany.logo} className="h-full w-full object-contain p-2" /> : <i className="fa-solid fa-image text-slate-200 text-2xl"></i>}
+                    <h2 className="text-4xl font-extrabold mb-10 text-slate-900">Business Profile</h2>
+                    <div className="space-y-8">
+                        <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-md flex flex-col items-center">
+                            <div className="h-32 w-32 bg-slate-100 rounded-2xl mb-6 overflow-hidden border-4 border-dashed border-slate-300 flex items-center justify-center">
+                                {localCompany.logo ? <img src={localCompany.logo} className="h-full w-full object-contain p-4" /> : <i className="fa-solid fa-building text-slate-300 text-5xl"></i>}
                             </div>
-                            <button onClick={() => fileRef.current.click()} className="text-blue-600 font-bold text-[10px] uppercase">Update Logo</button>
+                            <button onClick={() => fileRef.current.click()} className="text-blue-600 font-semibold hover:text-blue-800 text-sm">Upload Logo</button>
                             <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={(e) => {
                                 const file = e.target.files[0];
                                 if(file){
@@ -65,30 +60,29 @@
                             }} />
                         </div>
 
-                        <div className="space-y-4 bg-white p-8 rounded-[3rem] border shadow-sm">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Company Info</p>
-                            <input placeholder="Business Name" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.name} onChange={e => setLocalCompany({...localCompany, name: e.target.value})} />
-                            <div className="grid grid-cols-2 gap-4">
-                                <input placeholder="Hourly Rate $" type="number" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.hourlyRate} onChange={e => setLocalCompany({...localCompany, hourlyRate: e.target.value})} />
-                                <input placeholder="Phone" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.phone} onChange={e => setLocalCompany({...localCompany, phone: e.target.value})} />
+                        <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-md space-y-6">
+                            <h3 className="text-xl font-bold text-slate-800">Company Details</h3>
+                            <input placeholder="Business Name (e.g., Dean's Handyman)" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.name} onChange={e => setLocalCompany({...localCompany, name: e.target.value})} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <input placeholder="Hourly Rate ($)" type="number" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.hourlyRate} onChange={e => setLocalCompany({...localCompany, hourlyRate: e.target.value})} />
+                                <input placeholder="Phone Number" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.phone} onChange={e => setLocalCompany({...localCompany, phone: e.target.value})} />
                             </div>
-                            <input placeholder="Email" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.email} onChange={e => setLocalCompany({...localCompany, email: e.target.value})} />
-                            <input placeholder="Location (City, State)" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.address} onChange={e => setLocalCompany({...localCompany, address: e.target.value})} />
+                            <input placeholder="Email Address" type="email" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.email} onChange={e => setLocalCompany({...localCompany, email: e.target.value})} />
+                            <input placeholder="Location (e.g., Dallas, TX)" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium" value={localCompany.address} onChange={e => setLocalCompany({...localCompany, address: e.target.value})} />
                         </div>
 
-                        <div className="space-y-4 bg-white p-8 rounded-[3rem] border shadow-sm">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Payment Links</p>
-                            <input placeholder="Venmo Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-xs" value={localCompany.paymentLinks.venmo} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, venmo: e.target.value}})} />
-                            <input placeholder="PayPal Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-xs" value={localCompany.paymentLinks.paypal} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, paypal: e.target.value}})} />
-                            <input placeholder="Cash App Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-xs" value={localCompany.paymentLinks.cashapp} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, cashapp: e.target.value}})} />
-                            <input placeholder="Square Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-xs" value={localCompany.paymentLinks.square} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, square: e.target.value}})} />
+                        <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-md space-y-6">
+                            <h3 className="text-xl font-bold text-slate-800">Payment Links</h3>
+                            <input placeholder="Venmo Link" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium text-sm" value={localCompany.paymentLinks.venmo} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, venmo: e.target.value}})} />
+                            <input placeholder="PayPal Link" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium text-sm" value={localCompany.paymentLinks.paypal} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, paypal: e.target.value}})} />
+                            <input placeholder="Cash App Link" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium text-sm" value={localCompany.paymentLinks.cashapp} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, cashapp: e.target.value}})} />
+                            <input placeholder="Square Link" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none font-medium text-sm" value={localCompany.paymentLinks.square} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, square: e.target.value}})} />
                         </div>
                     </div>
                 </div>
             );
         };
 
-        // --- MAIN APP ---
         function App() {
             const [view, setView] = useState('dashboard');
             const [activeTab, setActiveTab] = useState('leads');
@@ -97,45 +91,60 @@
             const [selectedId, setSelectedId] = useState(null);
             const [isEditing, setIsEditing] = useState(false);
             const [editingId, setEditingId] = useState(null);
-            
+
             const [company, setCompany] = useState({
-                name: "", phone: "", email: "", address: "", logo: "", 
-                hourlyRate: 75, 
+                name: "Dean's Handyman TX",
+                phone: "",
+                email: "",
+                address: "Dallas, TX",
+                logo: "",
+                hourlyRate: 125,
                 paymentLinks: { 
                     venmo: "",
-                    paypal: "https://www.paypal.com/ncp/payment/CVURGTVEWZ96J",
-                    cashapp: "https://cash.app/$HandymanDean",
+                    paypal: "",
+                    cashapp: "",
                     square: ""
                 }
             });
 
-            const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: [] });
+            const [form, setForm] = useState({
+                name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: []
+            });
 
             useEffect(() => {
-                const d = localStorage.getItem('tj_v7_data');
-                const c = localStorage.getItem('tj_v7_comp');
-                if (d) setCustomers(JSON.parse(d));
-                if (c) setCompany(JSON.parse(c));
+                const savedCustomers = localStorage.getItem('jobTracker_customers');
+                const savedCompany = localStorage.getItem('jobTracker_company');
+                if (savedCustomers) setCustomers(JSON.parse(savedCustomers));
+                if (savedCompany) setCompany(JSON.parse(savedCompany));
             }, []);
 
-            const persist = (d) => { setCustomers(d); localStorage.setItem('tj_v7_data', JSON.stringify(d)); };
-            const saveComp = (c) => { setCompany(c); localStorage.setItem('tj_v7_comp', JSON.stringify(c)); };
+            useEffect(() => {
+                localStorage.setItem('jobTracker_customers', JSON.stringify(customers));
+            }, [customers]);
 
-            const handlePhotoChange = async (e) => {
-                const files = e.target.files;
-                if (!files.length) return;
-                const promises = Array.from(files).map(file => new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                }));
-                try {
-                    const urls = await Promise.all(promises);
-                    setForm(prev => ({ ...prev, photos: [...prev.photos, ...urls] }));
-                } catch (err) {
-                    console.error('Photo load error:', err);
+            useEffect(() => {
+                localStorage.setItem('jobTracker_company', JSON.stringify(company));
+            }, [company]);
+
+            useEffect(() => {
+                const h = parseFloat(form.hours) || 0;
+                if (h > 0 && company.hourlyRate) {
+                    const calcLabor = h * parseFloat(company.hourlyRate);
+                    setForm(prev => ({ ...prev, labor: calcLabor.toFixed(2) }));
                 }
+            }, [form.hours, company.hourlyRate]);
+
+            const handlePhotoChange = (e) => {
+                const files = Array.from(e.target.files);
+                Promise.all(files.map(file => {
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
+                    });
+                })).then(urls => {
+                    setForm(prev => ({ ...prev, photos: [...prev.photos, ...urls] }));
+                });
             };
 
             const handleSaveJob = (e) => {
@@ -143,26 +152,24 @@
                 const hoursVal = parseFloat(form.hours) || 0;
                 const laborVal = parseFloat(form.labor) || 0;
                 const matVal = parseFloat(form.materials) || 0;
-                const updatedJob = {
+                const newJob = {
                     ...form,
+                    id: isEditing ? editingId : Date.now().toString(),
                     hours: hoursVal,
                     labor: laborVal,
                     materials: matVal,
                     total: laborVal + matVal,
+                    status: isEditing ? customers.find(c => c.id === editingId)?.status || 'Estimate' : 'Estimate',
+                    createdAt: isEditing ? customers.find(c => c.id === editingId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
                     photos: form.photos || []
                 };
-
-                let updatedCustomers;
+                let updated;
                 if (isEditing) {
-                    updatedCustomers = customers.map(c => c.id === editingId ? { ...c, ...updatedJob } : c);
+                    updated = customers.map(c => c.id === editingId ? newJob : c);
                 } else {
-                    updatedJob.id = Date.now().toString();
-                    updatedJob.status = 'Estimate';
-                    updatedJob.createdAt = new Date().toISOString();
-                    updatedCustomers = [updatedJob, ...customers];
+                    updated = [newJob, ...customers];
                 }
-
-                persist(updatedCustomers);
+                setCustomers(updated);
                 setForm({ name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: [] });
                 setIsEditing(false);
                 setEditingId(null);
@@ -170,313 +177,360 @@
             };
 
             const handleDelete = (id) => {
-                if (confirm('Delete this job?')) {
-                    const updated = customers.filter(c => c.id !== id);
-                    persist(updated);
+                if (window.confirm('Are you sure you want to delete this job?')) {
+                    setCustomers(customers.filter(c => c.id !== id));
                     if (selectedId === id) setSelectedId(null);
                 }
             };
 
             const generatePDF = (job) => {
                 const { jsPDF } = window.jspdf;
-                if (!jsPDF) return alert('PDF library not loaded');
                 const doc = new jsPDF();
                 const isPaid = job.status === 'Paid';
                 const label = isPaid ? 'INVOICE' : 'ESTIMATE';
 
-                // Header
-                doc.setFontSize(24);
-                doc.text(company.name || "The Job Tracker", 105, 30, { align: 'center' });
-                if (company.logo) doc.addImage(company.logo, 'PNG', 80, 35, 50, 20);
-                doc.setFontSize(12);
-                doc.text([company.phone, company.email, company.address].filter(Boolean).join(' | '), 105, 60, { align: 'center' });
-                doc.line(20, 70, 190, 70);
+                doc.setFontSize(22);
+                doc.text(company.name || "Dean's Handyman TX", 105, 20, { align: 'center' });
+                if (company.logo) doc.addImage(company.logo, 'PNG', 80, 25, 50, 15);
+                doc.setFontSize(10);
+                doc.text([company.phone, company.email, company.address].filter(Boolean).join(' • '), 105, 45, { align: 'center' });
+                doc.line(15, 50, 195, 50);
 
-                // Bill To & Info
                 doc.setFontSize(14);
-                doc.text('Bill To:', 20, 80);
+                doc.text('Bill To:', 15, 60);
                 doc.setFontSize(12);
-                doc.text(job.name, 20, 90);
-                doc.text(job.address || '', 20, 97);
-                doc.text(`${label} Date: ${new Date(job.createdAt).toLocaleDateString()}`, 150, 80, { align: 'right' });
+                doc.text(job.name, 15, 68);
+                doc.text(job.address || '', 15, 74);
+                doc.text(`${label} #: ${job.id.slice(-6)}`, 105, 60);
+                doc.text(`Date: ${new Date(job.createdAt).toLocaleDateString()}`, 105, 68);
 
-                // Description
-                let y = 110;
-                doc.text('Description:', 20, y);
-                y += 10;
-                const descLines = doc.splitTextToSize(job.description || 'No description', 170);
-                doc.text(descLines, 20, y);
-                y += descLines.length * 7 + 10;
+                let y = 85;
+                doc.setFontSize(12);
+                doc.text('Job Description:', 15, y);
+                y += 8;
+                const descLines = doc.splitTextToSize(job.description || 'No description provided.', 180);
+                doc.text(descLines, 15, y);
+                y += descLines.length * 6 + 10;
 
-                // Photos
-                if (job.photos?.length > 0) {
-                    doc.text('Photos:', 20, y);
-                    y += 10;
-                    for (const photo of job.photos) {
+                if (job.photos.length > 0) {
+                    doc.text('Photos:', 15, y);
+                    y += 8;
+                    job.photos.forEach((photo, idx) => {
                         if (y > 250) { doc.addPage(); y = 20; }
-                        const format = photo.split(';')[0].split('/')[1].toUpperCase();
-                        doc.addImage(photo, format, 20, y, 80, 60);
-                        y += 70;
-                    }
+                        doc.addImage(photo, 'JPEG', 15, y, 90, 60);
+                        y += 65;
+                    });
                 }
 
-                // Totals
                 y += 10;
-                doc.setFontSize(12);
-                if (job.hours > 0) { doc.text(`Estimated Hours: ${job.hours}`, 20, y); y += 10; }
-                doc.text(`Labor: \[ {job.labor.toFixed(2)}`, 20, y); y += 10;
-                doc.text(`Materials: \]{job.materials.toFixed(2)}`, 20, y); y += 10;
-                doc.setFontSize(18);
-                doc.setTextColor(37, 99, 235);
-                doc.text(`TOTAL: \[ {job.total.toFixed(2)}`, 20, y);
+                if (job.hours > 0) {
+                    doc.text(`Estimated Hours: ${job.hours} @ \[ {parseFloat(company.hourlyRate || 0).toFixed(2)}/hr`, 15, y);
+                    y += 10;
+                }
+                doc.text(`Labor: \]{job.labor.toFixed(2)}`, 15, y); y += 10;
+                doc.text(`Materials: \[ {job.materials.toFixed(2)}`, 15, y); y += 15;
+                doc.setFontSize(16);
+                doc.setTextColor(0, 0, 255);
+                doc.text(`TOTAL: \]{job.total.toFixed(2)}`, 15, y);
 
-                doc.save(`\( {label}_ \){job.name.replace(/\s+/g, '_')}.pdf`);
+                doc.save(`\( {label}- \){job.name.replace(/\s+/g, '-')}.pdf`);
             };
 
-            const sendDoc = (customer, mode) => {
-                const isEst = customer.status === 'Estimate';
-                const label = isEst ? "ESTIMATE" : "INVOICE";
+            const sendDoc = (job, mode) => {
+                const isEst = job.status === 'Estimate';
+                const label = isEst ? 'Estimate' : 'Invoice';
                 const body = `
-${company.name || "The Job Tracker"} - ${label}
------------------------
-To: ${customer.name}
-Work: ${customer.description}
+${company.name || "Dean's Handyman TX"} - ${label}
+Date: ${new Date(job.createdAt).toLocaleDateString()}
+Job #: ${job.id.slice(-6)}
 
-Labor: \]{customer.labor.toFixed(2)}
-Materials: \[ {customer.materials.toFixed(2)}
-TOTAL DUE: \]{customer.total.toFixed(2)}
+Customer: ${job.name}
+${job.address ? `Address: ${job.address}` : ''}
+Description: ${job.description}
 
-${!isEst ? `PAYMENT OPTIONS:
+${job.hours > 0 ? `Hours: ${job.hours} @ \[ {(company.hourlyRate || 0).toFixed(2)}/hr` : ''}
+Labor: \]{job.labor.toFixed(2)}
+Materials: \[ {job.materials.toFixed(2)}
+TOTAL: \]{job.total.toFixed(2)}
+
+${!isEst ? `Payment Options:
 ${company.paymentLinks.venmo ? `Venmo: ${company.paymentLinks.venmo}\n` : ''}
-PayPal: ${company.paymentLinks.paypal}
-Cash App: ${company.paymentLinks.cashapp}
-Square: ${company.paymentLinks.square}` : 'Please reply to accept this quote.'}
+${company.paymentLinks.paypal ? `PayPal: ${company.paymentLinks.paypal}\n` : ''}
+${company.paymentLinks.cashapp ? `Cash App: ${company.paymentLinks.cashapp}\n` : ''}
+${company.paymentLinks.square ? `Square: ${company.paymentLinks.square}` : ''}
+` : 'Please confirm acceptance by replying to this message.'}
 
-Thank you,
-${company.name || "The Job Tracker"}
+Thank you for choosing us!
+${company.name || "Dean's Handyman TX"}
+${company.phone ? `Call: ${company.phone}` : ''}
 `.trim();
 
                 const url = mode === 'email' 
-                    ? `mailto:\( {customer.email}?subject= \){label} from \( {company.name || "The Job Tracker"}&body= \){encodeURIComponent(body)}`
-                    : `sms:\( {customer.phone}?body= \){encodeURIComponent(body)}`;
-                window.location.href = url;
+                    ? `mailto:\( {job.email}?subject= \){label} from \( {company.name || "Dean's Handyman TX"}&body= \){encodeURIComponent(body)}`
+                    : `sms:\( {job.phone}?body= \){encodeURIComponent(body)}`;
+                window.open(url, '_blank');
             };
 
-            const currentJob = customers.find(x => x.id === selectedId);
-            const appTitle = company.name || "The Job Tracker";
+            const currentJob = customers.find(c => c.id === selectedId);
 
-            // Filtered jobs
-            const filteredCustomers = customers.filter(c => {
-                const matchesTab = activeTab === 'leads' ? c.status === 'Estimate' :
-                                  activeTab === 'active' ? c.status === 'Active' :
-                                  c.status === 'Paid';
-                const matchesSearch = !searchTerm || 
-                    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    c.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (c.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (c.description || '').toLowerCase().includes(searchTerm.toLowerCase());
-                return matchesTab && matchesSearch;
+            const filteredJobs = customers.filter(job => {
+                const tabMatch = activeTab === 'leads' ? job.status === 'Estimate' :
+                                 activeTab === 'active' ? ['Active', 'In Progress'].includes(job.status) :
+                                 job.status === 'Paid';
+                const searchMatch = !searchTerm || 
+                    job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (job.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (job.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (job.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+                return tabMatch && searchMatch;
             });
 
-            if (view === 'settings') return <SettingsView company={company} onBack={() => setView('dashboard')} onSave={(c) => { saveComp(c); setView('dashboard'); }} />;
+            if (view === 'settings') {
+                return <SettingsView company={company} onBack={() => setView('dashboard')} onSave={(updated) => { setCompany(updated); setView('dashboard'); }} />;
+            }
 
-            if (view === 'job-form') return (
-                <div className="p-6 pb-32 animate-in max-w-xl mx-auto">
-                    <button onClick={() => { setView('dashboard'); setIsEditing(false); setEditingId(null); }} className="mb-8 text-slate-400 font-bold text-xs uppercase tracking-widest"><i className="fa-solid fa-xmark mr-2"></i> Cancel</button>
-                    <form onSubmit={handleSaveJob} className="space-y-6">
-                        <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
-                            <input required placeholder="Customer Name" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-                            <div className="grid grid-cols-2 gap-4">
-                                <input required placeholder="Phone" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-                                <input placeholder="Email" type="email" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+            if (view === 'job-form') {
+                return (
+                    <div className="p-6 pb-32 max-w-3xl mx-auto animate-in">
+                        <button onClick={() => { setView('dashboard'); setIsEditing(false); }} className="mb-8 text-slate-500 hover:text-slate-700 font-semibold flex items-center">
+                            <i className="fa-solid fa-arrow-left mr-2"></i> Cancel
+                        </button>
+                        <h2 className="text-3xl font-bold mb-8 text-slate-900">{isEditing ? 'Edit Job' : 'New Job'}</h2>
+                        <form onSubmit={handleSaveJob} className="space-y-8">
+                            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-md space-y-6">
+                                <h3 className="text-xl font-semibold text-slate-800">Customer Info</h3>
+                                <input required placeholder="Customer Name" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <input required placeholder="Phone" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                                    <input placeholder="Email" type="email" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                                </div>
+                                <input placeholder="Job Address" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
                             </div>
-                            <input placeholder="Job Address" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
-                        </div>
-                        <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
-                            <div className="grid grid-cols-3 gap-4">
-                                <input type="number" placeholder="Est. Hours" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.hours} onChange={e => setForm({...form, hours: e.target.value})} />
-                                <input type="number" placeholder="Labor $" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.labor} onChange={e => setForm({...form, labor: e.target.value})} />
-                                <input type="number" placeholder="Materials $" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.materials} onChange={e => setForm({...form, materials: e.target.value})} />
+
+                            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-md space-y-6">
+                                <h3 className="text-xl font-semibold text-slate-800">Job Details</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <input type="number" placeholder="Est. Hours" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.hours} onChange={e => setForm({...form, hours: e.target.value})} />
+                                    <input type="number" placeholder="Labor ($)" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.labor} onChange={e => setForm({...form, labor: e.target.value})} />
+                                    <input type="number" placeholder="Materials ($)" className="p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.materials} onChange={e => setForm({...form, materials: e.target.value})} />
+                                </div>
+                                <textarea rows="5" placeholder="Job description / scope of work..." className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200 focus:border-blue-500 outline-none" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
                             </div>
-                            <textarea rows="3" placeholder="Job Scope..." className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
-                        </div>
-                        <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
-                            <p className="text-sm font-bold">Photos</p>
-                            <input type="file" multiple accept="image/*" onChange={handlePhotoChange} className="w-full p-4 bg-slate-50 rounded-2xl" />
-                            <div className="grid grid-cols-3 gap-4 mt-4">
-                                {form.photos.map((photo, idx) => (
-                                    <div key={idx} className="relative">
-                                        <img src={photo} alt="preview" className="w-full h-24 object-cover rounded-xl" />
-                                        <button type="button" onClick={() => setForm({...form, photos: form.photos.filter((_, i) => i !== idx)})} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center">X</button>
+
+                            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-md space-y-6">
+                                <h3 className="text-xl font-semibold text-slate-800">Photos</h3>
+                                <input type="file" multiple accept="image/*" onChange={handlePhotoChange} className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-200" />
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                                    {form.photos.map((p, i) => (
+                                        <div key={i} className="relative rounded-2xl overflow-hidden shadow">
+                                            <img src={p} alt="preview" className="w-full h-32 object-cover" />
+                                            <button type="button" onClick={() => setForm({...form, photos: form.photos.filter((_, idx) => idx !== i)})} className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold shadow">X</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-10 rounded-3xl text-white text-center shadow-xl">
+                                <p className="text-sm uppercase font-bold tracking-wider opacity-80 mb-2">Total Amount</p>
+                                <p className="text-6xl font-black">${(parseFloat(form.labor || 0) + parseFloat(form.materials || 0)).toFixed(2)}</p>
+                            </div>
+
+                            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-3xl font-bold text-xl shadow-lg transition">
+                                {isEditing ? 'Update Job' : 'Create Job'}
+                            </button>
+                        </form>
+                    </div>
+                );
+            }
+
+            if (view === 'document' && currentJob) {
+                return (
+                    <div className="min-h-screen bg-white p-8 pb-40 max-w-4xl mx-auto">
+                        <button onClick={() => setView('dashboard')} className="mb-10 text-slate-500 hover:text-slate-700 font-semibold flex items-center">
+                            <i className="fa-solid fa-arrow-left mr-2"></i> Back to Dashboard
+                        </button>
+                        <div className="border-t-8 border-slate-900 pt-10">
+                            <div className="flex flex-col md:flex-row justify-between items-start mb-12">
+                                <div>
+                                    {company.logo && <img src={company.logo} alt="logo" className="h-20 mb-6 object-contain" />}
+                                    <h1 className="text-4xl font-black text-slate-900">{company.name || "Dean's Handyman TX"}</h1>
+                                    <div className="text-sm text-slate-600 mt-3 space-y-1">
+                                        <p>{company.phone}</p>
+                                        <p>{company.email}</p>
+                                        <p>{company.address}</p>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="bg-slate-900 p-10 rounded-[4rem] text-center text-white">
-                            <p className="text-[10px] text-blue-400 font-black uppercase mb-1 tracking-widest opacity-70">Total Quote</p>
-                            <p className="text-5xl font-black">${((parseFloat(form.labor)||0) + (parseFloat(form.materials)||0)).toFixed(2)}</p>
-                        </div>
-                        <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[2.5rem] font-black text-xl uppercase shadow-xl tracking-widest">
-                            {isEditing ? 'Update Job' : 'Generate Job'}
-                        </button>
-                    </form>
-                </div>
-            );
-
-            if (view === 'document' && currentJob) return (
-                <div className="bg-white min-h-screen p-8 pb-40 animate-in max-w-2xl mx-auto">
-                    <button onClick={() => setView('dashboard')} className="mb-10 text-slate-400 font-bold text-xs uppercase tracking-widest"><i className="fa-solid fa-chevron-left mr-2"></i> Dashboard</button>
-                    
-                    <div className="border-t-[12px] border-slate-900 pt-12">
-                        <div className="flex justify-between items-start mb-16">
-                            <div>
-                                {company.logo && <img src={company.logo} className="h-16 mb-6 object-contain" />}
-                                <h1 className="text-2xl font-black uppercase leading-tight tracking-tighter">{appTitle}</h1>
-                                <div className="text-[11px] font-bold text-slate-400 mt-2 uppercase space-y-1">
-                                    <p>{company.phone}</p>
-                                    <p>{company.email}</p>
-                                    <p>{company.address}</p>
+                                </div>
+                                <div className="text-right mt-8 md:mt-0">
+                                    <h2 className="text-5xl font-black text-slate-900">{currentJob.status === 'Paid' ? 'INVOICE' : 'ESTIMATE'}</h2>
+                                    <p className="text-sm text-slate-500 mt-2">Date: {new Date(currentJob.createdAt).toLocaleDateString()}</p>
+                                    <p className="text-sm text-slate-500">Job #: {currentJob.id.slice(-6)}</p>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <h2 className="text-5xl font-black text-slate-100 uppercase leading-none">{currentJob.status === 'Paid' ? 'Invoice' : 'Estimate'}</h2>
-                                <p className="text-[10px] font-bold text-slate-400 mt-3 italic">DATED: {new Date(currentJob.createdAt).toLocaleDateString()}</p>
-                            </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-12 mb-12 pb-12 border-b">
-                            <div>
-                                <p className="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Bill To</p>
-                                <p className="text-2xl font-black text-slate-900">{currentJob.name}</p>
-                                <p className="text-sm text-slate-500 mt-2 leading-relaxed">{currentJob.address}</p>
-                            </div>
-                            <div className="bg-slate-50 p-8 rounded-[2.5rem]">
-                                <p className="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Work Detail</p>
-                                <p className="text-sm font-semibold text-slate-700 leading-relaxed">{currentJob.description}</p>
-                                {currentJob.hours > 0 && <p className="mt-4 text-sm font-semibold">Est. Hours: {currentJob.hours}</p>}
-                            </div>
-                        </div>
-
-                        {currentJob.photos?.length > 0 && (
-                            <div className="mb-12">
-                                <p className="text-[10px] font-black text-slate-300 uppercase mb-4 tracking-widest">Photos</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {currentJob.photos.map((p, i) => <img key={i} src={p} alt="Job photo" className="rounded-2xl shadow-sm" />)}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
+                                <div>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Bill To</p>
+                                    <p className="text-3xl font-bold text-slate-900">{currentJob.name}</p>
+                                    <p className="text-lg text-slate-600 mt-2">{currentJob.address}</p>
+                                </div>
+                                <div className="bg-slate-50 p-8 rounded-3xl">
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Job Details</p>
+                                    <p className="text-lg text-slate-700 whitespace-pre-line">{currentJob.description || 'No description'}</p>
+                                    {currentJob.hours > 0 && <p className="mt-6 text-lg font-medium">Est. Hours: {currentJob.hours} @ ${(company.hourlyRate || 0).toFixed(2)}/hr</p>}
                                 </div>
                             </div>
-                        )}
 
-                        <div className="space-y-6 mb-16">
-                            <div className="flex justify-between text-base font-bold border-b border-slate-50 pb-5">
-                                <span className="text-slate-400 uppercase text-[10px] tracking-widest">Professional Labor</span>
-                                <span>${currentJob.labor.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-base font-bold border-b border-slate-50 pb-5">
-                                <span className="text-slate-400 uppercase text-[10px] tracking-widest">Parts & Materials</span>
-                                <span>${currentJob.materials.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-5xl font-black pt-8 text-slate-900 tracking-tighter">
-                                <span>TOTAL</span>
-                                <span className="text-blue-600 font-black">${currentJob.total.toFixed(2)}</span>
-                            </div>
-                        </div>
+                            {currentJob.photos.length > 0 && (
+                                <div className="mb-12">
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-4">Photos</p>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                        {currentJob.photos.map((p, i) => (
+                                            <img key={i} src={p} alt={`Job photo ${i+1}`} className="rounded-2xl shadow-md object-cover h-48 w-full" />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
-                        {currentJob.status === 'Paid' && (
-                            <div className="bg-slate-900 p-10 rounded-[3.5rem] text-white">
-                                <p className="text-[11px] font-black text-blue-400 uppercase mb-6 tracking-widest text-center">Final Payment Options</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {company.paymentLinks.venmo && <a href={company.paymentLinks.venmo} className="bg-white/10 p-5 rounded-2xl text-center font-black text-[10px] tracking-widest hover:bg-white/20">VENMO</a>}
-                                    <a href={company.paymentLinks.paypal} className="bg-white/10 p-5 rounded-2xl text-center font-black text-[10px] tracking-widest hover:bg-white/20">PAYPAL</a>
-                                    <a href={company.paymentLinks.cashapp} className="bg-white/10 p-5 rounded-2xl text-center font-black text-[10px] tracking-widest hover:bg-white/20">CASH APP</a>
-                                    <a href={company.paymentLinks.square} className="col-span-2 bg-blue-600 p-5 rounded-2xl text-center font-black text-[10px] tracking-widest">SQUARE CREDIT CARD</a>
+                            <div className="space-y-8 mb-16">
+                                <div className="flex justify-between items-center py-4 border-b border-slate-200">
+                                    <span className="text-slate-600 font-medium">Labor</span>
+                                    <span className="text-xl font-bold">${currentJob.labor.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center py-4 border-b border-slate-200">
+                                    <span className="text-slate-600 font-medium">Materials</span>
+                                    <span className="text-xl font-bold">${currentJob.materials.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-6">
+                                    <span className="text-3xl font-bold text-slate-900">TOTAL</span>
+                                    <span className="text-5xl font-black text-blue-600">${currentJob.total.toFixed(2)}</span>
                                 </div>
                             </div>
-                        )}
+
+                            {currentJob.status === 'Paid' && (
+                                <div className="bg-slate-900 text-white p-10 rounded-3xl">
+                                    <p className="text-sm font-bold text-blue-300 uppercase tracking-wider mb-6 text-center">Payment Options</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {company.paymentLinks.venmo && <a href={company.paymentLinks.venmo} target="_blank" className="bg-white/10 p-6 rounded-2xl text-center font-bold hover:bg-white/20 transition">Venmo</a>}
+                                        {company.paymentLinks.paypal && <a href={company.paymentLinks.paypal} target="_blank" className="bg-white/10 p-6 rounded-2xl text-center font-bold hover:bg-white/20 transition">PayPal</a>}
+                                        {company.paymentLinks.cashapp && <a href={company.paymentLinks.cashapp} target="_blank" className="bg-white/10 p-6 rounded-2xl text-center font-bold hover:bg-white/20 transition">Cash App</a>}
+                                        {company.paymentLinks.square && <a href={company.paymentLinks.square} target="_blank" className="md:col-span-2 bg-blue-600 p-6 rounded-2xl text-center font-bold hover:bg-blue-700 transition">Pay with Square</a>}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="fixed bottom-8 left-4 right-4 md:left-auto md:right-8 md:w-96 flex gap-4 bg-white p-4 rounded-3xl shadow-2xl border border-slate-200">
+                            <button onClick={() => sendDoc(currentJob, 'email')} className="flex-1 bg-slate-800 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-slate-900 transition">
+                                <i className="fa-solid fa-envelope"></i> Email
+                            </button>
+                            <button onClick={() => sendDoc(currentJob, 'sms')} className="flex-1 bg-blue-600 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 transition">
+                                <i className="fa-solid fa-comment-dots"></i> Text
+                            </button>
+                            <button onClick={() => generatePDF(currentJob)} className="flex-1 bg-green-600 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-green-700 transition">
+                                <i className="fa-solid fa-file-pdf"></i> PDF
+                            </button>
+                        </div>
                     </div>
-
-                    <div className="fixed bottom-8 left-6 right-6 flex gap-4">
-                        <button onClick={() => sendDoc(currentJob, 'email')} className="flex-1 bg-slate-900 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                            <i className="fa-solid fa-envelope text-lg"></i> EMAIL
-                        </button>
-                        <button onClick={() => sendDoc(currentJob, 'sms')} className="flex-1 bg-blue-600 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                            <i className="fa-solid fa-message text-lg"></i> TEXT
-                        </button>
-                        <button onClick={() => generatePDF(currentJob)} className="flex-1 bg-green-600 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                            <i className="fa-solid fa-file-pdf text-lg"></i> PDF
-                        </button>
-                    </div>
-                </div>
-            );
+                );
+            }
 
             return (
-                <div className="max-w-xl mx-auto min-h-screen bg-slate-50 pb-40">
-                    <header className="bg-slate-900 text-white px-10 pt-16 pb-20 rounded-b-[5rem] shadow-2xl relative">
-                        <div className="flex justify-between items-start relative z-10">
+                <div className="max-w-4xl mx-auto min-h-screen bg-slate-50 pb-32">
+                    <header className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-8 pt-20 pb-24 rounded-b-[4rem] shadow-2xl">
+                        <div className="flex justify-between items-start">
                             <div>
-                                {company.logo ? <img src={company.logo} className="h-10 mb-5 object-contain brightness-0 invert" /> : <div className="h-10 w-10 bg-blue-600 rounded-2xl mb-5 flex items-center justify-center rotate-3"><i className="fa-solid fa-bolt"></i></div>}
-                                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none italic">{appTitle}</h1>
-                                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em] mt-2 opacity-80">{company.address || "Field Operations"}</p>
+                                {company.logo ? <img src={company.logo} className="h-16 mb-6 object-contain invert" /> : <div className="h-16 w-16 bg-blue-600 rounded-2xl mb-6 flex items-center justify-center text-white text-3xl font-bold"><i className="fa-solid fa-tools"></i></div>}
+                                <h1 className="text-5xl font-black tracking-tight">{company.name || "Dean's Job Tracker"}</h1>
+                                <p className="text-lg text-blue-300 mt-3">{company.address || "Dallas, TX"}</p>
                             </div>
-                            <button onClick={() => setView('settings')} className="bg-white/10 h-14 w-14 rounded-3xl flex items-center justify-center border border-white/5 shadow-inner"><i className="fa-solid fa-gear text-slate-400"></i></button>
+                            <button onClick={() => setView('settings')} className="bg-white/10 p-4 rounded-2xl hover:bg-white/20 transition">
+                                <i className="fa-solid fa-gear text-2xl"></i>
+                            </button>
                         </div>
-                        <div className="grid grid-cols-2 gap-5 mt-12">
-                            <div className="bg-white/5 p-8 rounded-[3rem] border border-white/10 backdrop-blur-md">
-                                <p className="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-widest">Open</p>
-                                <p className="text-4xl font-black">{customers.filter(c => c.status === 'Estimate').length}</p>
+                        <div className="grid grid-cols-2 gap-6 mt-12">
+                            <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20">
+                                <p className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Open Estimates</p>
+                                <p className="text-6xl font-black">{customers.filter(c => c.status === 'Estimate').length}</p>
                             </div>
-                            <div className="bg-white/5 p-8 rounded-[3rem] border border-white/10 backdrop-blur-md">
-                                <p className="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-widest">Active</p>
-                                <p className="text-4xl font-black text-blue-400">{customers.filter(c => c.status === 'Active').length}</p>
+                            <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20">
+                                <p className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Active Jobs</p>
+                                <p className="text-6xl font-black text-blue-300">{customers.filter(c => c.status !== 'Estimate' && c.status !== 'Paid').length}</p>
                             </div>
                         </div>
                     </header>
 
-                    <div className="px-8 -mt-12 relative z-20">
-                        <div className="bg-white p-2 rounded-[3.5rem] shadow-2xl flex gap-1 border">
-                            {['leads', 'active', 'history'].map(t => (
-                                <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-5 rounded-[3rem] font-black text-[11px] uppercase transition-all ${activeTab === t ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400'}`}>
-                                    {t}
+                    <div className="px-8 -mt-16 relative z-10">
+                        <div className="bg-white rounded-[3rem] shadow-2xl p-3 border border-slate-200 flex">
+                            {['leads', 'active', 'history'].map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-5 rounded-[2.5rem] font-bold text-sm uppercase transition-all ${activeTab === tab ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'}`}>
+                                    {tab === 'leads' ? 'Estimates' : tab === 'active' ? 'Active' : 'Completed'}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    <main className="px-8 mt-8 space-y-6">
+                    <main className="px-8 mt-12 space-y-8">
                         <input 
                             type="text" 
-                            placeholder="Search by name, phone..." 
-                            className="w-full p-5 bg-white rounded-[2.5rem] border shadow-sm outline-none font-bold" 
+                            placeholder="Search jobs by name, phone, or address..." 
+                            className="w-full p-6 bg-white rounded-3xl border border-slate-200 shadow-md outline-none font-medium text-lg focus:border-blue-500" 
                             value={searchTerm} 
                             onChange={e => setSearchTerm(e.target.value)} 
                         />
 
-                        {filteredCustomers.map(c => (
-                            <div key={c.id} className="bg-white p-8 rounded-[4rem] border shadow-sm active:scale-[0.98] transition-all">
+                        {filteredJobs.length === 0 && (
+                            <div className="text-center py-20 text-slate-500">
+                                <i className="fa-solid fa-folder-open text-6xl mb-6 opacity-50"></i>
+                                <p className="text-xl font-medium">No jobs found. Create one to get started!</p>
+                            </div>
+                        )}
+
+                        {filteredJobs.map(job => (
+                            <div key={job.id} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-md hover:shadow-lg transition">
                                 <div className="flex justify-between items-start mb-6">
-                                    <div className="flex-1">
-                                        <h3 className="text-2xl font-black text-slate-900 leading-none mb-1 tracking-tight">{c.name}</h3>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase">{c.address || 'Field Visit'}</p>
-                                        {c.photos?.length > 0 && <p className="text-xs text-slate-500 mt-2">{c.photos.length} photo{c.photos.length !== 1 ? 's' : ''}</p>}
+                                    <div>
+                                        <h3 className="text-3xl font-bold text-slate-900">{job.name}</h3>
+                                        <p className="text-sm text-slate-500 mt-2">{job.address || 'No address'}</p>
+                                        {job.photos.length > 0 && <p className="text-sm text-blue-600 mt-1">{job.photos.length} photo{job.photos.length > 1 ? 's' : ''}</p>}
                                     </div>
-                                    <p className="text-2xl font-black text-blue-600 tracking-tighter">${c.total.toFixed(0)}</p>
+                                    <div className="text-right">
+                                        <p className="text-4xl font-black text-blue-600">${job.total.toFixed(0)}</p>
+                                        <p className="text-xs text-slate-500 mt-1">{new Date(job.createdAt).toLocaleDateString()}</p>
+                                    </div>
                                 </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => { setSelectedId(c.id); setView('document'); }} className="flex-1 bg-slate-50 text-slate-700 py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">VIEW</button>
+                                <p className="text-slate-700 mb-6 line-clamp-2">{job.description || 'No description'}</p>
+                                <div className="flex flex-wrap gap-4">
+                                    <button onClick={() => { setSelectedId(job.id); setView('document'); }} className="flex-1 min-w-[100px] bg-slate-100 hover:bg-slate-200 text-slate-800 py-5 rounded-2xl font-bold text-sm transition">
+                                        View Details
+                                    </button>
                                     <button onClick={() => {
                                         setForm({
-                                            name: c.name, phone: c.phone, email: c.email, address: c.address,
-                                            hours: c.hours?.toString() || '', labor: c.labor.toString(), materials: c.materials.toString(),
-                                            description: c.description, photos: c.photos || []
+                                            name: job.name, phone: job.phone, email: job.email, address: job.address,
+                                            hours: job.hours.toString(), labor: job.labor.toString(), materials: job.materials.toString(),
+                                            description: job.description, photos: job.photos
                                         });
                                         setIsEditing(true);
-                                        setEditingId(c.id);
+                                        setEditingId(job.id);
                                         setView('job-form');
-                                    }} className="flex-1 bg-yellow-500 text-white py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">EDIT</button>
-                                    <button onClick={() => handleDelete(c.id)} className="flex-1 bg-red-500 text-white py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">DELETE</button>
+                                    }} className="flex-1 min-w-[100px] bg-yellow-100 hover:bg-yellow-200 text-yellow-800 py-5 rounded-2xl font-bold text-sm transition">
+                                        Edit
+                                    </button>
+                                    <button onClick={() => handleDelete(job.id)} className="flex-1 min-w-[100px] bg-red-100 hover:bg-red-200 text-red-800 py-5 rounded-2xl font-bold text-sm transition">
+                                        Delete
+                                    </button>
                                 </div>
-                                <div className="flex gap-3 mt-3">
-                                    {c.status === 'Estimate' && <button onClick={() => persist(customers.map(x => x.id === c.id ? {...x, status: 'Active'} : x))} className="flex-1 bg-slate-900 text-white py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">START</button>}
-                                    {c.status === 'Active' && <button onClick={() => persist(customers.map(x => x.id === c.id ? {...x, status: 'Paid'} : x))} className="flex-1 bg-green-500 text-white py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">PAID</button>}
+                                <div className="flex gap-4 mt-6">
+                                    {job.status === 'Estimate' && (
+                                        <button onClick={() => setCustomers(customers.map(c => c.id === job.id ? {...c, status: 'Active'} : c))} className="flex-1 bg-slate-800 text-white py-5 rounded-2xl font-bold hover:bg-slate-900 transition">
+                                            Mark Active
+                                        </button>
+                                    )}
+                                    {job.status === 'Active' && (
+                                        <button onClick={() => setCustomers(customers.map(c => c.id === job.id ? {...c, status: 'Paid'} : c))} className="flex-1 bg-green-600 text-white py-5 rounded-2xl font-bold hover:bg-green-700 transition">
+                                            Mark Paid
+                                        </button>
+                                    )}
+                                    {job.status === 'Paid' && <p className="flex-1 text-center py-5 text-green-600 font-bold">Completed</p>}
                                 </div>
                             </div>
                         ))}
@@ -487,15 +541,14 @@ ${company.name || "The Job Tracker"}
                         setIsEditing(false); 
                         setEditingId(null); 
                         setView('job-form'); 
-                    }} className="fixed bottom-12 right-10 bg-blue-600 text-white h-24 w-24 rounded-[3.5rem] shadow-2xl flex items-center justify-center z-50 border-8 border-slate-50 active:scale-95 transition-all">
+                    }} className="fixed bottom-8 right-8 bg-blue-600 text-white h-20 w-20 rounded-full shadow-2xl flex items-center justify-center hover:bg-blue-700 transition z-50">
                         <i className="fa-solid fa-plus text-4xl"></i>
                     </button>
                 </div>
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
