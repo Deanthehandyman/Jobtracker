@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -28,10 +29,9 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useRef } = React;
 
-        // --- STABLE FORM COMPONENTS ---
-        
+        // --- SETTINGS VIEW ---
         const SettingsView = ({ company, onSave, onBack }) => {
             const [localCompany, setLocalCompany] = useState({...company});
             const fileRef = useRef(null);
@@ -78,9 +78,10 @@
 
                         <div className="space-y-4 bg-white p-8 rounded-[3rem] border shadow-sm">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Payment Links</p>
-                            <input placeholder="Square Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-xs" value={localCompany.paymentLinks.square} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, square: e.target.value}})} />
+                            <input placeholder="Venmo Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-xs" value={localCompany.paymentLinks.venmo} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, venmo: e.target.value}})} />
                             <input placeholder="PayPal Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-xs" value={localCompany.paymentLinks.paypal} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, paypal: e.target.value}})} />
                             <input placeholder="Cash App Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-xs" value={localCompany.paymentLinks.cashapp} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, cashapp: e.target.value}})} />
+                            <input placeholder="Square Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none text-xs" value={localCompany.paymentLinks.square} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, square: e.target.value}})} />
                         </div>
                     </div>
                 </div>
@@ -88,26 +89,27 @@
         };
 
         // --- MAIN APP ---
-
         function App() {
             const [view, setView] = useState('dashboard');
             const [activeTab, setActiveTab] = useState('leads');
+            const [searchTerm, setSearchTerm] = useState('');
             const [customers, setCustomers] = useState([]);
             const [selectedId, setSelectedId] = useState(null);
+            const [isEditing, setIsEditing] = useState(false);
+            const [editingId, setEditingId] = useState(null);
             
             const [company, setCompany] = useState({
                 name: "", phone: "", email: "", address: "", logo: "", 
                 hourlyRate: 75, 
                 paymentLinks: { 
-                    square: "", 
                     venmo: "",
                     paypal: "https://www.paypal.com/ncp/payment/CVURGTVEWZ96J",
-                    cashapp: "https://cash.app/$HandymanDean"
+                    cashapp: "https://cash.app/$HandymanDean",
+                    square: ""
                 }
             });
 
-            // Intake Form Local State
-            const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', labor: '', materials: '', description: '', photos: [] });
+            const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: [] });
 
             useEffect(() => {
                 const d = localStorage.getItem('tj_v7_data');
@@ -119,62 +121,168 @@
             const persist = (d) => { setCustomers(d); localStorage.setItem('tj_v7_data', JSON.stringify(d)); };
             const saveComp = (c) => { setCompany(c); localStorage.setItem('tj_v7_comp', JSON.stringify(c)); };
 
+            const handlePhotoChange = async (e) => {
+                const files = e.target.files;
+                if (!files.length) return;
+                const promises = Array.from(files).map(file => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                }));
+                try {
+                    const urls = await Promise.all(promises);
+                    setForm(prev => ({ ...prev, photos: [...prev.photos, ...urls] }));
+                } catch (err) {
+                    console.error('Photo load error:', err);
+                }
+            };
+
             const handleSaveJob = (e) => {
                 e.preventDefault();
+                const hoursVal = parseFloat(form.hours) || 0;
                 const laborVal = parseFloat(form.labor) || 0;
                 const matVal = parseFloat(form.materials) || 0;
-                const newJob = {
+                const updatedJob = {
                     ...form,
-                    id: Date.now().toString(),
+                    hours: hoursVal,
                     labor: laborVal,
                     materials: matVal,
                     total: laborVal + matVal,
-                    status: 'Estimate',
-                    createdAt: new Date().toISOString(),
                     photos: form.photos || []
                 };
-                persist([newJob, ...customers]);
-                setForm({ name: '', phone: '', email: '', address: '', labor: '', materials: '', description: '', photos: [] });
+
+                let updatedCustomers;
+                if (isEditing) {
+                    updatedCustomers = customers.map(c => c.id === editingId ? { ...c, ...updatedJob } : c);
+                } else {
+                    updatedJob.id = Date.now().toString();
+                    updatedJob.status = 'Estimate';
+                    updatedJob.createdAt = new Date().toISOString();
+                    updatedCustomers = [updatedJob, ...customers];
+                }
+
+                persist(updatedCustomers);
+                setForm({ name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: [] });
+                setIsEditing(false);
+                setEditingId(null);
                 setView('dashboard');
             };
 
-            const appTitle = company.name || "The Job Tracker";
-            const currentJob = customers.find(x => x.id === selectedId);
+            const handleDelete = (id) => {
+                if (confirm('Delete this job?')) {
+                    const updated = customers.filter(c => c.id !== id);
+                    persist(updated);
+                    if (selectedId === id) setSelectedId(null);
+                }
+            };
+
+            const generatePDF = (job) => {
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) return alert('PDF library not loaded');
+                const doc = new jsPDF();
+                const isPaid = job.status === 'Paid';
+                const label = isPaid ? 'INVOICE' : 'ESTIMATE';
+
+                // Header
+                doc.setFontSize(24);
+                doc.text(company.name || "The Job Tracker", 105, 30, { align: 'center' });
+                if (company.logo) doc.addImage(company.logo, 'PNG', 80, 35, 50, 20);
+                doc.setFontSize(12);
+                doc.text([company.phone, company.email, company.address].filter(Boolean).join(' | '), 105, 60, { align: 'center' });
+                doc.line(20, 70, 190, 70);
+
+                // Bill To & Info
+                doc.setFontSize(14);
+                doc.text('Bill To:', 20, 80);
+                doc.setFontSize(12);
+                doc.text(job.name, 20, 90);
+                doc.text(job.address || '', 20, 97);
+                doc.text(`${label} Date: ${new Date(job.createdAt).toLocaleDateString()}`, 150, 80, { align: 'right' });
+
+                // Description
+                let y = 110;
+                doc.text('Description:', 20, y);
+                y += 10;
+                const descLines = doc.splitTextToSize(job.description || 'No description', 170);
+                doc.text(descLines, 20, y);
+                y += descLines.length * 7 + 10;
+
+                // Photos
+                if (job.photos?.length > 0) {
+                    doc.text('Photos:', 20, y);
+                    y += 10;
+                    for (const photo of job.photos) {
+                        if (y > 250) { doc.addPage(); y = 20; }
+                        const format = photo.split(';')[0].split('/')[1].toUpperCase();
+                        doc.addImage(photo, format, 20, y, 80, 60);
+                        y += 70;
+                    }
+                }
+
+                // Totals
+                y += 10;
+                doc.setFontSize(12);
+                if (job.hours > 0) { doc.text(`Estimated Hours: ${job.hours}`, 20, y); y += 10; }
+                doc.text(`Labor: \[ {job.labor.toFixed(2)}`, 20, y); y += 10;
+                doc.text(`Materials: \]{job.materials.toFixed(2)}`, 20, y); y += 10;
+                doc.setFontSize(18);
+                doc.setTextColor(37, 99, 235);
+                doc.text(`TOTAL: \[ {job.total.toFixed(2)}`, 20, y);
+
+                doc.save(`\( {label}_ \){job.name.replace(/\s+/g, '_')}.pdf`);
+            };
 
             const sendDoc = (customer, mode) => {
                 const isEst = customer.status === 'Estimate';
                 const label = isEst ? "ESTIMATE" : "INVOICE";
                 const body = `
-${appTitle} - ${label}
+${company.name || "The Job Tracker"} - ${label}
 -----------------------
 To: ${customer.name}
 Work: ${customer.description}
 
-Labor: $${customer.labor.toFixed(2)}
-Materials: $${customer.materials.toFixed(2)}
-TOTAL DUE: $${customer.total.toFixed(2)}
+Labor: \]{customer.labor.toFixed(2)}
+Materials: \[ {customer.materials.toFixed(2)}
+TOTAL DUE: \]{customer.total.toFixed(2)}
 
 ${!isEst ? `PAYMENT OPTIONS:
+${company.paymentLinks.venmo ? `Venmo: ${company.paymentLinks.venmo}\n` : ''}
 PayPal: ${company.paymentLinks.paypal}
 Cash App: ${company.paymentLinks.cashapp}
 Square: ${company.paymentLinks.square}` : 'Please reply to accept this quote.'}
 
 Thank you,
-${appTitle}
+${company.name || "The Job Tracker"}
 `.trim();
 
                 const url = mode === 'email' 
-                    ? `mailto:${customer.email}?subject=${label} from ${appTitle}&body=${encodeURIComponent(body)}`
-                    : `sms:${customer.phone}?body=${encodeURIComponent(body)}`;
+                    ? `mailto:\( {customer.email}?subject= \){label} from \( {company.name || "The Job Tracker"}&body= \){encodeURIComponent(body)}`
+                    : `sms:\( {customer.phone}?body= \){encodeURIComponent(body)}`;
                 window.location.href = url;
             };
 
-            // Views
+            const currentJob = customers.find(x => x.id === selectedId);
+            const appTitle = company.name || "The Job Tracker";
+
+            // Filtered jobs
+            const filteredCustomers = customers.filter(c => {
+                const matchesTab = activeTab === 'leads' ? c.status === 'Estimate' :
+                                  activeTab === 'active' ? c.status === 'Active' :
+                                  c.status === 'Paid';
+                const matchesSearch = !searchTerm || 
+                    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    c.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (c.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (c.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+                return matchesTab && matchesSearch;
+            });
+
             if (view === 'settings') return <SettingsView company={company} onBack={() => setView('dashboard')} onSave={(c) => { saveComp(c); setView('dashboard'); }} />;
-            
-            if (view === 'add-job') return (
+
+            if (view === 'job-form') return (
                 <div className="p-6 pb-32 animate-in max-w-xl mx-auto">
-                    <button onClick={() => setView('dashboard')} className="mb-8 text-slate-400 font-bold text-xs uppercase tracking-widest"><i className="fa-solid fa-xmark mr-2"></i> Cancel</button>
+                    <button onClick={() => { setView('dashboard'); setIsEditing(false); setEditingId(null); }} className="mb-8 text-slate-400 font-bold text-xs uppercase tracking-widest"><i className="fa-solid fa-xmark mr-2"></i> Cancel</button>
                     <form onSubmit={handleSaveJob} className="space-y-6">
                         <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
                             <input required placeholder="Customer Name" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
@@ -185,17 +293,32 @@ ${appTitle}
                             <input placeholder="Job Address" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
                         </div>
                         <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
-                            <div className="grid grid-cols-2 gap-4">
-                                <input type="number" placeholder="Labor $" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.labor} onChange={e => setForm({...form, labor: e.target.value})} />
-                                <input type="number" placeholder="Materials $" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.materials} onChange={e => setForm({...form, materials: e.target.value})} />
+                            <div className="grid grid-cols-3 gap-4">
+                                <input type="number" placeholder="Est. Hours" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.hours} onChange={e => setForm({...form, hours: e.target.value})} />
+                                <input type="number" placeholder="Labor $" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.labor} onChange={e => setForm({...form, labor: e.target.value})} />
+                                <input type="number" placeholder="Materials $" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.materials} onChange={e => setForm({...form, materials: e.target.value})} />
                             </div>
                             <textarea rows="3" placeholder="Job Scope..." className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                        </div>
+                        <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
+                            <p className="text-sm font-bold">Photos</p>
+                            <input type="file" multiple accept="image/*" onChange={handlePhotoChange} className="w-full p-4 bg-slate-50 rounded-2xl" />
+                            <div className="grid grid-cols-3 gap-4 mt-4">
+                                {form.photos.map((photo, idx) => (
+                                    <div key={idx} className="relative">
+                                        <img src={photo} alt="preview" className="w-full h-24 object-cover rounded-xl" />
+                                        <button type="button" onClick={() => setForm({...form, photos: form.photos.filter((_, i) => i !== idx)})} className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center">X</button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         <div className="bg-slate-900 p-10 rounded-[4rem] text-center text-white">
                             <p className="text-[10px] text-blue-400 font-black uppercase mb-1 tracking-widest opacity-70">Total Quote</p>
                             <p className="text-5xl font-black">${((parseFloat(form.labor)||0) + (parseFloat(form.materials)||0)).toFixed(2)}</p>
                         </div>
-                        <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[2.5rem] font-black text-xl uppercase shadow-xl tracking-widest">Generate Job</button>
+                        <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[2.5rem] font-black text-xl uppercase shadow-xl tracking-widest">
+                            {isEditing ? 'Update Job' : 'Generate Job'}
+                        </button>
                     </form>
                 </div>
             );
@@ -230,8 +353,18 @@ ${appTitle}
                             <div className="bg-slate-50 p-8 rounded-[2.5rem]">
                                 <p className="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Work Detail</p>
                                 <p className="text-sm font-semibold text-slate-700 leading-relaxed">{currentJob.description}</p>
+                                {currentJob.hours > 0 && <p className="mt-4 text-sm font-semibold">Est. Hours: {currentJob.hours}</p>}
                             </div>
                         </div>
+
+                        {currentJob.photos?.length > 0 && (
+                            <div className="mb-12">
+                                <p className="text-[10px] font-black text-slate-300 uppercase mb-4 tracking-widest">Photos</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {currentJob.photos.map((p, i) => <img key={i} src={p} alt="Job photo" className="rounded-2xl shadow-sm" />)}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="space-y-6 mb-16">
                             <div className="flex justify-between text-base font-bold border-b border-slate-50 pb-5">
@@ -252,6 +385,7 @@ ${appTitle}
                             <div className="bg-slate-900 p-10 rounded-[3.5rem] text-white">
                                 <p className="text-[11px] font-black text-blue-400 uppercase mb-6 tracking-widest text-center">Final Payment Options</p>
                                 <div className="grid grid-cols-2 gap-4">
+                                    {company.paymentLinks.venmo && <a href={company.paymentLinks.venmo} className="bg-white/10 p-5 rounded-2xl text-center font-black text-[10px] tracking-widest hover:bg-white/20">VENMO</a>}
                                     <a href={company.paymentLinks.paypal} className="bg-white/10 p-5 rounded-2xl text-center font-black text-[10px] tracking-widest hover:bg-white/20">PAYPAL</a>
                                     <a href={company.paymentLinks.cashapp} className="bg-white/10 p-5 rounded-2xl text-center font-black text-[10px] tracking-widest hover:bg-white/20">CASH APP</a>
                                     <a href={company.paymentLinks.square} className="col-span-2 bg-blue-600 p-5 rounded-2xl text-center font-black text-[10px] tracking-widest">SQUARE CREDIT CARD</a>
@@ -266,6 +400,9 @@ ${appTitle}
                         </button>
                         <button onClick={() => sendDoc(currentJob, 'sms')} className="flex-1 bg-blue-600 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
                             <i className="fa-solid fa-message text-lg"></i> TEXT
+                        </button>
+                        <button onClick={() => generatePDF(currentJob)} className="flex-1 bg-green-600 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                            <i className="fa-solid fa-file-pdf text-lg"></i> PDF
                         </button>
                     </div>
                 </div>
@@ -304,22 +441,40 @@ ${appTitle}
                         </div>
                     </div>
 
-                    <main className="px-8 mt-14 space-y-6">
-                        {customers.filter(c => {
-                            if (activeTab === 'leads') return c.status === 'Estimate';
-                            if (activeTab === 'active') return c.status === 'Active';
-                            return c.status === 'Paid';
-                        }).map(c => (
+                    <main className="px-8 mt-8 space-y-6">
+                        <input 
+                            type="text" 
+                            placeholder="Search by name, phone..." 
+                            className="w-full p-5 bg-white rounded-[2.5rem] border shadow-sm outline-none font-bold" 
+                            value={searchTerm} 
+                            onChange={e => setSearchTerm(e.target.value)} 
+                        />
+
+                        {filteredCustomers.map(c => (
                             <div key={c.id} className="bg-white p-8 rounded-[4rem] border shadow-sm active:scale-[0.98] transition-all">
                                 <div className="flex justify-between items-start mb-6">
                                     <div className="flex-1">
                                         <h3 className="text-2xl font-black text-slate-900 leading-none mb-1 tracking-tight">{c.name}</h3>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase">{c.address || 'Field Visit'}</p>
+                                        {c.photos?.length > 0 && <p className="text-xs text-slate-500 mt-2">{c.photos.length} photo{c.photos.length !== 1 ? 's' : ''}</p>}
                                     </div>
                                     <p className="text-2xl font-black text-blue-600 tracking-tighter">${c.total.toFixed(0)}</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => { setSelectedId(c.id); setView('document'); }} className="flex-1 bg-slate-50 text-slate-700 py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">VIEW</button>
+                                    <button onClick={() => {
+                                        setForm({
+                                            name: c.name, phone: c.phone, email: c.email, address: c.address,
+                                            hours: c.hours?.toString() || '', labor: c.labor.toString(), materials: c.materials.toString(),
+                                            description: c.description, photos: c.photos || []
+                                        });
+                                        setIsEditing(true);
+                                        setEditingId(c.id);
+                                        setView('job-form');
+                                    }} className="flex-1 bg-yellow-500 text-white py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">EDIT</button>
+                                    <button onClick={() => handleDelete(c.id)} className="flex-1 bg-red-500 text-white py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">DELETE</button>
+                                </div>
+                                <div className="flex gap-3 mt-3">
                                     {c.status === 'Estimate' && <button onClick={() => persist(customers.map(x => x.id === c.id ? {...x, status: 'Active'} : x))} className="flex-1 bg-slate-900 text-white py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">START</button>}
                                     {c.status === 'Active' && <button onClick={() => persist(customers.map(x => x.id === c.id ? {...x, status: 'Paid'} : x))} className="flex-1 bg-green-500 text-white py-5 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest">PAID</button>}
                                 </div>
@@ -327,7 +482,12 @@ ${appTitle}
                         ))}
                     </main>
 
-                    <button onClick={() => setView('add-job')} className="fixed bottom-12 right-10 bg-blue-600 text-white h-24 w-24 rounded-[3.5rem] shadow-2xl flex items-center justify-center z-50 border-8 border-slate-50 active:scale-95 transition-all">
+                    <button onClick={() => { 
+                        setForm({ name: '', phone: '', email: '', address: '', hours: '', labor: '', materials: '', description: '', photos: [] }); 
+                        setIsEditing(false); 
+                        setEditingId(null); 
+                        setView('job-form'); 
+                    }} className="fixed bottom-12 right-10 bg-blue-600 text-white h-24 w-24 rounded-[3.5rem] shadow-2xl flex items-center justify-center z-50 border-8 border-slate-50 active:scale-95 transition-all">
                         <i className="fa-solid fa-plus text-4xl"></i>
                     </button>
                 </div>
@@ -339,4 +499,3 @@ ${appTitle}
     </script>
 </body>
 </html>
-
