@@ -18,11 +18,10 @@
             overscroll-behavior: none;
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .btn-active:active { transform: scale(0.96); }
-        .timer-glow { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
-        @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        .animate-pulse-soft { animation: pulse-soft 2s infinite; }
-        input, textarea, select { font-size: 16px !important; } /* Prevents iOS zoom on focus */
+        input, textarea, select { font-size: 16px !important; }
+        .animate-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .timer-glow { box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
     </style>
 </head>
 <body>
@@ -31,453 +30,349 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- Core Application ---
+        // --- SEPARATE VIEW COMPONENTS FOR STABILITY ---
+
+        const SettingsView = ({ company, onSave, onBack }) => {
+            const [localCompany, setLocalCompany] = useState({...company});
+            const fileRef = useRef(null);
+
+            const handleLogo = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setLocalCompany(prev => ({...prev, logo: reader.result}));
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            return (
+                <div className="p-6 pb-32 animate-in">
+                    <div className="flex justify-between items-center mb-8">
+                        <button onClick={onBack} className="text-slate-400 font-bold text-xs uppercase">
+                            <i className="fa-solid fa-arrow-left mr-2"></i> Dashboard
+                        </button>
+                        <button 
+                            onClick={() => onSave(localCompany)}
+                            className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest shadow-lg"
+                        >
+                            Save Profile
+                        </button>
+                    </div>
+                    <h2 className="text-3xl font-extrabold mb-8 tracking-tighter">Business Profile</h2>
+                    <div className="space-y-6">
+                        <div className="flex flex-col items-center bg-white p-8 rounded-[3rem] border shadow-sm">
+                            <div className="h-24 w-24 bg-slate-50 rounded-3xl mb-4 overflow-hidden border-2 border-dashed border-slate-200 flex items-center justify-center">
+                                {localCompany.logo ? <img src={localCompany.logo} className="h-full w-full object-contain p-2" /> : <i className="fa-solid fa-image text-slate-200 text-2xl"></i>}
+                            </div>
+                            <button onClick={() => fileRef.current.click()} className="text-blue-600 font-bold text-[10px] uppercase tracking-widest">Update Logo</button>
+                            <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleLogo} />
+                        </div>
+                        <div className="space-y-4 bg-white p-8 rounded-[3rem] border shadow-sm">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Company Details</p>
+                            <input placeholder="Business Name" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-transparent focus:border-blue-500" value={localCompany.name} onChange={e => setLocalCompany({...localCompany, name: e.target.value})} />
+                            <div className="grid grid-cols-2 gap-4">
+                                <input placeholder="Hourly Rate $" type="number" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.hourlyRate} onChange={e => setLocalCompany({...localCompany, hourlyRate: e.target.value})} />
+                                <input placeholder="Phone" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.phone} onChange={e => setLocalCompany({...localCompany, phone: e.target.value})} />
+                            </div>
+                            <input placeholder="Email" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.email} onChange={e => setLocalCompany({...localCompany, email: e.target.value})} />
+                            <input placeholder="Location" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.address} onChange={e => setLocalCompany({...localCompany, address: e.target.value})} />
+                        </div>
+                        <div className="space-y-4 bg-white p-8 rounded-[3rem] border shadow-sm">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Payment Links</p>
+                            <input placeholder="Square Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.paymentLinks.square} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, square: e.target.value}})} />
+                            <input placeholder="Venmo Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.paymentLinks.venmo} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, venmo: e.target.value}})} />
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AddJobView = ({ onSave, onBack }) => {
+            const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', labor: '', materials: '', description: '', photos: [] });
+            const photoRef = useRef(null);
+
+            const handlePhotos = (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setForm(f => ({...f, photos: [...f.photos, reader.result]}));
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            return (
+                <div className="p-6 pb-32 animate-in">
+                    <div className="flex justify-between items-center mb-8">
+                        <button onClick={onBack} className="text-slate-400 font-bold text-xs uppercase"><i className="fa-solid fa-xmark mr-2"></i> Cancel</button>
+                        <h2 className="text-xl font-black uppercase tracking-tighter">New Intake</h2>
+                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="space-y-5">
+                        <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
+                            <input required placeholder="Customer Name" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                            <input required placeholder="Phone" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                            <input placeholder="Email" type="email" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                            <input placeholder="Address" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
+                        </div>
+                        <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
+                            <div className="grid grid-cols-2 gap-4">
+                                <input type="number" placeholder="Labor $" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.labor} onChange={e => setForm({...form, labor: e.target.value})} />
+                                <input type="number" placeholder="Materials $" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.materials} onChange={e => setForm({...form, materials: e.target.value})} />
+                            </div>
+                            <textarea rows="3" placeholder="Description of work..." className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                        </div>
+                        <div className="bg-white p-8 rounded-[3rem] shadow-sm border space-y-4">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3">Job Photos</p>
+                            <div className="flex gap-3 flex-wrap">
+                                {form.photos.map((p, i) => <img key={i} src={p} className="h-16 w-16 object-cover rounded-2xl border" />)}
+                                <button type="button" onClick={() => photoRef.current.click()} className="h-16 w-16 border-2 border-dashed rounded-2xl flex items-center justify-center text-slate-200"><i className="fa-solid fa-camera"></i></button>
+                                <input type="file" ref={photoRef} className="hidden" multiple accept="image/*" onChange={handlePhotos} />
+                            </div>
+                        </div>
+                        <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[2.5rem] font-black text-xl uppercase shadow-xl tracking-widest">Create Job</button>
+                    </form>
+                </div>
+            );
+        };
+
+        const DocumentView = ({ customer, company, onBack, onUpdate }) => {
+            const photoRef = useRef(null);
+            
+            const handleAddPhotos = (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        onUpdate({ ...customer, photos: [...(customer.photos || []), reader.result] });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            const sendDoc = (mode) => {
+                const isEst = customer.status === 'Estimate';
+                const label = isEst ? "ESTIMATE" : "INVOICE";
+                const body = `
+${company.name} - ${label}
+-----------------------
+Work: ${customer.description}
+Total: $${parseFloat(customer.total).toFixed(2)}
+
+${!isEst ? `PAY VIA:
+Square: ${company.paymentLinks.square}
+Venmo: ${company.paymentLinks.venmo}` : 'Reply to accept this quote.'}
+
+Thank you!
+- ${company.name}
+`.trim();
+
+                if (mode === 'email') {
+                    window.location.href = `mailto:${customer.email}?subject=${label} from ${company.name}&body=${encodeURIComponent(body)}`;
+                } else {
+                    window.location.href = `sms:${customer.phone}?body=${encodeURIComponent(body)}`;
+                }
+            };
+
+            return (
+                <div className="bg-white min-h-screen p-8 pb-40 animate-in">
+                    <button onClick={onBack} className="text-slate-400 font-bold text-xs uppercase mb-8"><i className="fa-solid fa-chevron-left mr-2"></i> Dashboard</button>
+                    <div className="border-t-[10px] border-slate-900 pt-10">
+                        <div className="flex justify-between items-start mb-12">
+                            <div>
+                                {company.logo && <img src={company.logo} className="h-14 mb-4 object-contain" />}
+                                <h1 className="text-xl font-extrabold uppercase tracking-tight">{company.name || "The Job Tracker"}</h1>
+                                <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{company.phone} • {company.address}</p>
+                            </div>
+                            <div className="text-right">
+                                <h2 className="text-4xl font-black text-slate-100 uppercase">{customer.status === 'Paid' ? 'Invoice' : 'Estimate'}</h2>
+                                <p className="text-[9px] font-bold text-slate-400 mt-2 italic">{new Date(customer.createdAt).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-8 mb-10 pb-10 border-b">
+                            <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Client</p>
+                                <p className="text-lg font-bold leading-tight">{customer.name}</p>
+                                <p className="text-xs text-slate-500 mt-1">{customer.address}</p>
+                            </div>
+                            <div className="bg-slate-50 p-6 rounded-[2rem]">
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Job Info</p>
+                                <p className="text-xs font-medium">{customer.description}</p>
+                            </div>
+                        </div>
+                        <div className="space-y-4 mb-10">
+                            <div className="flex justify-between text-sm font-bold border-b border-slate-50 pb-4">
+                                <span className="text-slate-400 uppercase text-[9px]">Labor</span>
+                                <span>${parseFloat(customer.labor || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-bold border-b border-slate-50 pb-4">
+                                <span className="text-slate-400 uppercase text-[9px]">Materials</span>
+                                <span>${parseFloat(customer.materials || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-4xl font-black pt-6 text-slate-900">
+                                <span>TOTAL</span>
+                                <span className="text-blue-600">${parseFloat(customer.total).toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div className="mb-10">
+                            <div className="flex justify-between items-center mb-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                <span>Gallery</span>
+                                <button onClick={() => photoRef.current.click()} className="text-blue-600">+ Add</button>
+                                <input type="file" ref={photoRef} className="hidden" multiple accept="image/*" onChange={handleAddPhotos} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                {customer.photos?.map((p, i) => <img key={i} src={p} className="h-40 w-full object-cover rounded-[2rem] border shadow-sm" />)}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="fixed bottom-8 left-6 right-6 flex gap-3">
+                        <button onClick={() => sendDoc('email')} className="flex-1 bg-slate-900 text-white py-5 rounded-[2rem] font-black text-[10px] uppercase shadow-xl flex items-center justify-center gap-2"><i className="fa-solid fa-envelope"></i> Email</button>
+                        <button onClick={() => sendDoc('sms')} className="flex-1 bg-blue-600 text-white py-5 rounded-[2rem] font-black text-[10px] uppercase shadow-xl flex items-center justify-center gap-2"><i className="fa-solid fa-message"></i> Text</button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MAIN APP COMPONENT ---
+
         function App() {
-            // Main State
-            const [view, setView] = useState('dashboard'); // dashboard, document, settings, add-job
+            const [view, setView] = useState('dashboard');
             const [activeTab, setActiveTab] = useState('leads'); 
             const [customers, setCustomers] = useState([]);
-            const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+            const [selectedId, setSelectedId] = useState(null);
             const [currentTime, setCurrentTime] = useState(new Date());
 
-            // Company Settings State
             const [company, setCompany] = useState({
-                name: "Dean's Handyman Service LLC",
-                phone: "281-917-9914",
-                email: "dean@deanshandyman.com",
-                address: "Pittsburg, Texas",
-                logo: "",
-                hourlyRate: 75,
-                paymentLinks: {
-                    square: "",
-                    venmo: "",
-                    paypal: ""
-                }
+                name: "", phone: "", email: "", address: "", logo: "", 
+                hourlyRate: 75, paymentLinks: { square: "", venmo: "" }
             });
 
-            // Timer Tick
             useEffect(() => {
                 const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+                const d = localStorage.getItem('tj_tracker_data_v1');
+                const c = localStorage.getItem('tj_tracker_comp_v1');
+                if (d) setCustomers(JSON.parse(d));
+                if (c) setCompany(JSON.parse(c));
                 return () => clearInterval(interval);
             }, []);
 
-            // Initial Load
-            useEffect(() => {
-                const savedData = localStorage.getItem('tj_tracker_customers');
-                const savedCompany = localStorage.getItem('tj_tracker_company');
-                if (savedData) setCustomers(JSON.parse(savedData));
-                if (savedCompany) setCompany(JSON.parse(savedCompany));
-            }, []);
-
-            // Persistence Helpers
-            const persistCustomers = (data) => {
+            const persist = (data) => {
                 setCustomers(data);
-                localStorage.setItem('tj_tracker_customers', JSON.stringify(data));
+                localStorage.setItem('tj_tracker_data_v1', JSON.stringify(data));
             };
 
-            const persistCompany = (data) => {
-                setCompany(data);
-                localStorage.setItem('tj_tracker_company', JSON.stringify(data));
+            const saveCompany = (c) => {
+                setCompany(c);
+                localStorage.setItem('tj_tracker_comp_v1', JSON.stringify(c));
             };
 
-            // Selected Customer Object
-            const selectedCustomer = useMemo(() => 
-                customers.find(c => c.id === selectedCustomerId), 
-                [customers, selectedCustomerId]
-            );
-
-            // --- Business Logic ---
             const clockIn = (id) => {
-                const updated = customers.map(c => c.id === id ? { ...c, isClockedIn: true, lastStartTime: new Date().toISOString() } : c);
-                persistCustomers(updated);
+                persist(customers.map(c => c.id === id ? {...c, isClockedIn: true, lastStartTime: new Date().toISOString()} : c));
             };
 
             const clockOut = (id) => {
-                const updated = customers.map(c => {
-                    if(c.id === id && c.isClockedIn) {
-                        const endTime = new Date();
-                        const startTime = new Date(c.lastStartTime);
-                        const durationMs = endTime - startTime;
-                        const newLog = { start: c.lastStartTime, end: endTime.toISOString(), durationMs };
-                        const logs = [...(c.timeLogs || []), newLog];
-                        const totalHours = logs.reduce((acc, log) => acc + (log.durationMs / 3600000), 0);
-                        const newLabor = (totalHours * company.hourlyRate).toFixed(2);
-                        return { 
-                            ...c, 
-                            isClockedIn: false, 
-                            timeLogs: logs, 
-                            labor: newLabor,
-                            total: parseFloat(newLabor) + parseFloat(c.materials || 0)
-                        };
+                persist(customers.map(c => {
+                    if (c.id === id && c.isClockedIn) {
+                        const end = new Date();
+                        const start = new Date(c.lastStartTime);
+                        const diff = end - start;
+                        const logs = [...(c.timeLogs || []), {start: c.lastStartTime, end: end.toISOString(), diff}];
+                        const hrs = logs.reduce((acc, l) => acc + (l.diff / 3600000), 0);
+                        const labor = (hrs * company.hourlyRate).toFixed(2);
+                        return {...c, isClockedIn: false, timeLogs: logs, labor, total: parseFloat(labor) + parseFloat(c.materials || 0)};
                     }
                     return c;
-                });
-                persistCustomers(updated);
+                }));
             };
 
-            const getTotalTimeMs = (customer) => {
-                let totalMs = (customer.timeLogs || []).reduce((acc, log) => acc + log.durationMs, 0);
-                if (customer.isClockedIn) {
-                    totalMs += (new Date() - new Date(customer.lastStartTime));
-                }
-                return totalMs;
-            };
-
-            const formatDuration = (ms) => {
+            const formatDur = (ms) => {
                 const s = Math.floor((ms / 1000) % 60);
                 const m = Math.floor((ms / 60000) % 60);
                 const h = Math.floor(ms / 3600000);
                 return `${h}h ${m}m ${s}s`;
             };
 
-            // --- App Views ---
-
-            const SettingsView = () => {
-                const [localCompany, setLocalCompany] = useState(company);
-                const fileRef = useRef(null);
-
-                const saveSettings = () => {
-                    persistCompany(localCompany);
-                    setView('dashboard');
-                };
-
-                const handleLogo = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => setLocalCompany({...localCompany, logo: reader.result});
-                        reader.readAsDataURL(file);
-                    }
-                };
-
-                return (
-                    <div className="p-6 pb-32 animate-in fade-in">
-                        <div className="flex justify-between items-center mb-8">
-                            <button onClick={() => setView('dashboard')} className="text-slate-400 font-bold text-xs uppercase"><i className="fa-solid fa-arrow-left mr-2"></i> Dashboard</button>
-                            <button onClick={saveSettings} className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest shadow-lg">Save Profile</button>
-                        </div>
-                        
-                        <h2 className="text-3xl font-extrabold mb-8 tracking-tighter">The Job Tracker Settings</h2>
-                        
-                        <div className="space-y-6">
-                            <div className="flex flex-col items-center bg-white p-8 rounded-[3rem] border shadow-sm">
-                                <div className="h-24 w-24 bg-slate-50 rounded-3xl mb-4 overflow-hidden border-2 border-dashed border-slate-200 flex items-center justify-center">
-                                    {localCompany.logo ? <img src={localCompany.logo} className="h-full w-full object-contain p-2" /> : <i className="fa-solid fa-image text-slate-200 text-2xl"></i>}
-                                </div>
-                                <button onClick={() => fileRef.current.click()} className="text-blue-600 font-bold text-[10px] uppercase tracking-widest">Update Logo</button>
-                                <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleLogo} />
-                            </div>
-
-                            <div className="space-y-4 bg-white p-8 rounded-[3rem] border shadow-sm">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Company Info</p>
-                                <input placeholder="Company Name" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.name} onChange={e => setLocalCompany({...localCompany, name: e.target.value})} />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input placeholder="Hourly Rate ($)" type="number" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.hourlyRate} onChange={e => setLocalCompany({...localCompany, hourlyRate: e.target.value})} />
-                                    <input placeholder="Phone" className="p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.phone} onChange={e => setLocalCompany({...localCompany, phone: e.target.value})} />
-                                </div>
-                                <input placeholder="Business Email" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.email} onChange={e => setLocalCompany({...localCompany, email: e.target.value})} />
-                                <input placeholder="Location" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.address} onChange={e => setLocalCompany({...localCompany, address: e.target.value})} />
-                            </div>
-
-                            <div className="space-y-4 bg-white p-8 rounded-[3rem] border shadow-sm">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Payments</p>
-                                <input placeholder="Square Payment Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.paymentLinks.square} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, square: e.target.value}})} />
-                                <input placeholder="Venmo Link" className="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none" value={localCompany.paymentLinks.venmo} onChange={e => setLocalCompany({...localCompany, paymentLinks: {...localCompany.paymentLinks, venmo: e.target.value}})} />
-                            </div>
-                        </div>
-                    </div>
-                );
+            const getMs = (c) => {
+                let ms = (c.timeLogs || []).reduce((acc, l) => acc + l.diff, 0);
+                if (c.isClockedIn) ms += (new Date() - new Date(c.lastStartTime));
+                return ms;
             };
 
-            const AddJobView = () => {
-                const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', labor: '', materials: '', description: '', photos: [] });
-                const photoRef = useRef(null);
+            const appTitle = company.name || "The Job Tracker";
 
-                const handleSave = (e) => {
-                    e.preventDefault();
-                    const laborVal = parseFloat(form.labor) || 0;
-                    const materialsVal = parseFloat(form.materials) || 0;
-                    const newCustomer = {
-                        ...form,
-                        id: Date.now().toString(),
-                        labor: laborVal,
-                        materials: materialsVal,
-                        total: laborVal + materialsVal,
-                        status: 'Estimate',
-                        createdAt: new Date().toISOString(),
-                        timeLogs: [],
-                        isClockedIn: false
-                    };
-                    persistCustomers([newCustomer, ...customers]);
-                    setView('dashboard');
-                };
+            if (view === 'settings') return <SettingsView company={company} onBack={() => setView('dashboard')} onSave={(c) => { saveCompany(c); setView('dashboard'); }} />;
+            if (view === 'add-job') return <AddJobView onBack={() => setView('dashboard')} onSave={(f) => { persist([{...f, id: Date.now().toString(), status: 'Estimate', createdAt: new Date().toISOString(), timeLogs: [], isClockedIn: false}, ...customers]); setView('dashboard'); }} />;
+            if (view === 'document') {
+                const c = customers.find(x => x.id === selectedId);
+                return <DocumentView customer={c} company={company} onBack={() => setView('dashboard')} onUpdate={(up) => persist(customers.map(x => x.id === up.id ? up : x))} />;
+            }
 
-                const handlePhotos = (e) => {
-                    const files = Array.from(e.target.files);
-                    files.forEach(file => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => setForm(f => ({...f, photos: [...f.photos, reader.result]}));
-                        reader.readAsDataURL(file);
-                    });
-                };
-
-                return (
-                    <div className="p-6 pb-32 animate-in slide-in-from-bottom duration-300">
-                        <div className="flex justify-between items-center mb-8">
-                            <button onClick={() => setView('dashboard')} className="text-slate-400 font-bold text-xs uppercase"><i className="fa-solid fa-xmark mr-2"></i> Close</button>
-                            <h2 className="text-xl font-black uppercase tracking-tighter">New Intake</h2>
-                        </div>
-
-                        <form onSubmit={handleSave} className="space-y-5">
-                            <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
-                                <input required placeholder="Customer Full Name" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input required placeholder="Phone" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-                                    <input placeholder="Email" type="email" className="p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
-                                </div>
-                                <input placeholder="Job Site Address" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
-                            </div>
-
-                            <div className="bg-white p-8 rounded-[3rem] shadow-sm space-y-4 border">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3 mb-1">Labor Estimate ($)</p>
-                                        <input type="number" placeholder="0.00" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.labor} onChange={e => setForm({...form, labor: e.target.value})} />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3 mb-1">Materials ($)</p>
-                                        <input type="number" placeholder="0.00" className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none text-blue-600" value={form.materials} onChange={e => setForm({...form, materials: e.target.value})} />
-                                    </div>
-                                </div>
-                                <textarea rows="3" placeholder="Description of work..." className="w-full p-5 bg-slate-50 rounded-2xl font-bold outline-none" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
-                            </div>
-
-                            <div className="bg-white p-8 rounded-[3rem] shadow-sm border space-y-4">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3">Initial Photos</p>
-                                <div className="flex gap-3 flex-wrap">
-                                    {form.photos.map((p, i) => <img key={i} src={p} className="h-16 w-16 object-cover rounded-2xl border" />)}
-                                    <button type="button" onClick={() => photoRef.current.click()} className="h-16 w-16 border-2 border-dashed rounded-2xl flex items-center justify-center text-slate-200"><i className="fa-solid fa-camera"></i></button>
-                                    <input type="file" ref={photoRef} className="hidden" multiple accept="image/*" onChange={handlePhotos} />
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-900 p-8 rounded-[3.5rem] text-center text-white">
-                                <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-1 opacity-70">Estimated Total</p>
-                                <p className="text-4xl font-black">${((parseFloat(form.labor) || 0) + (parseFloat(form.materials) || 0)).toFixed(2)}</p>
-                            </div>
-
-                            <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[2.5rem] font-black text-xl uppercase tracking-widest shadow-xl">Generate Job</button>
-                        </form>
-                    </div>
-                );
-            };
-
-            const DocumentView = () => {
-                if (!selectedCustomer) return null;
-                const totalTimeMs = getTotalTime(selectedCustomer);
-                const hrs = (totalTimeMs / 3600000).toFixed(2);
-                const photoRef = useRef(null);
-
-                const handleAddPhotos = (e) => {
-                    const files = Array.from(e.target.files);
-                    files.forEach(file => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const updated = customers.map(c => c.id === selectedCustomerId ? { ...c, photos: [...(c.photos || []), reader.result] } : c);
-                            persistCustomers(updated);
-                        };
-                        reader.readAsDataURL(file);
-                    });
-                };
-
-                const deleteJob = () => {
-                    if(confirm("Permanently delete this customer?")) {
-                        persistCustomers(customers.filter(c => c.id !== selectedCustomerId));
-                        setView('dashboard');
-                    }
-                };
-
-                const sendDoc = (mode) => {
-                    const isEst = selectedCustomer.status === 'Estimate';
-                    const body = `${company.name}\n${isEst ? 'ESTIMATE' : 'INVOICE'}\nTotal: $${selectedCustomer.total}\nTime logged: ${hrs} hrs\nWork: ${selectedCustomer.description}\n\nPay via: ${company.paymentLinks.square}`;
-                    const url = mode === 'email' 
-                        ? `mailto:${selectedCustomer.email}?subject=${isEst ? 'Estimate' : 'Invoice'}&body=${encodeURIComponent(body)}`
-                        : `sms:${selectedCustomer.phone}?body=${encodeURIComponent(body)}`;
-                    window.location.href = url;
-                };
-
-                return (
-                    <div className="bg-white min-h-screen p-8 pb-40 animate-in slide-in-from-right duration-300">
-                        <div className="flex justify-between items-center mb-8">
-                            <button onClick={() => setView('dashboard')} className="text-slate-400 font-bold text-xs uppercase"><i className="fa-solid fa-chevron-left mr-2"></i> Dashboard</button>
-                            <button onClick={deleteJob} className="text-red-300 text-sm"><i className="fa-solid fa-trash"></i></button>
-                        </div>
-
-                        <div className="border-t-[10px] border-slate-900 pt-10">
-                            <div className="flex justify-between items-start mb-12">
-                                <div>
-                                    {company.logo && <img src={company.logo} className="h-14 mb-4 object-contain" />}
-                                    <h1 className="text-xl font-extrabold uppercase tracking-tight leading-none">{company.name}</h1>
-                                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{company.phone} • {company.location}</p>
-                                </div>
-                                <div className="text-right">
-                                    <h2 className="text-4xl font-black text-slate-100 uppercase leading-none">{selectedCustomer.status === 'Paid' ? 'Invoice' : 'Estimate'}</h2>
-                                    <p className="text-[9px] font-bold text-slate-400 mt-2 italic">{new Date(selectedCustomer.createdAt).toLocaleDateString()}</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-8 mb-10 pb-10 border-b">
-                                <div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-2 tracking-widest">Client</p>
-                                    <p className="text-lg font-bold leading-tight">{selectedCustomer.name}</p>
-                                    <p className="text-xs text-slate-500 mt-1">{selectedCustomer.address}</p>
-                                </div>
-                                <div className="bg-slate-50 p-6 rounded-[2rem]">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Job Context</p>
-                                    <p className="text-xs font-medium leading-relaxed">{selectedCustomer.description}</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4 mb-10">
-                                <div className="flex justify-between text-sm font-bold border-b border-slate-50 pb-4">
-                                    <div className="flex flex-col">
-                                        <span className="text-slate-400 uppercase text-[9px]">Professional Labor ({hrs} hrs)</span>
-                                        <span className="text-[10px] text-slate-300 font-medium tracking-tight">Rate: ${company.hourlyRate}/hr</span>
-                                    </div>
-                                    <span>${parseFloat(selectedCustomer.labor).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm font-bold border-b border-slate-50 pb-4">
-                                    <span className="text-slate-400 uppercase text-[9px]">Project Materials</span>
-                                    <span>${parseFloat(selectedCustomer.materials).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-4xl font-black pt-6 text-slate-900">
-                                    <span>TOTAL DUE</span>
-                                    <span className="text-blue-600">${parseFloat(selectedCustomer.total).toFixed(2)}</span>
-                                </div>
-                            </div>
-
-                            <div className="mb-10">
-                                <div className="flex justify-between items-center mb-4">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Work Gallery</p>
-                                    <button onClick={() => photoRef.current.click()} className="text-blue-600 font-bold text-[10px] uppercase tracking-widest">+ Add Photo</button>
-                                    <input type="file" ref={photoRef} className="hidden" multiple accept="image/*" onChange={handleAddPhotos} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {selectedCustomer.photos?.map((p, i) => <img key={i} src={p} className="h-40 w-full object-cover rounded-[2rem] border" />)}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="fixed bottom-8 left-6 right-6 flex gap-3">
-                            <button onClick={() => sendDoc('email')} className="flex-1 bg-slate-900 text-white py-5 rounded-[2rem] font-black text-[10px] uppercase shadow-2xl tracking-widest flex items-center justify-center gap-2"><i className="fa-solid fa-envelope"></i> Email</button>
-                            <button onClick={() => sendDoc('sms')} className="flex-1 bg-blue-600 text-white py-5 rounded-[2rem] font-black text-[10px] uppercase shadow-2xl tracking-widest flex items-center justify-center gap-2"><i className="fa-solid fa-message"></i> Text</button>
-                        </div>
-                    </div>
-                );
-            };
-
-            const Dashboard = () => (
-                <div className="animate-in fade-in">
-                    <header className="bg-slate-900 text-white px-10 pt-12 pb-16 rounded-b-[5rem] shadow-2xl relative overflow-hidden">
-                        <div className="flex justify-between items-start mb-8 relative z-10">
+            return (
+                <div className="max-w-xl mx-auto min-h-screen bg-slate-50 animate-in pb-32">
+                    <header className="bg-slate-900 text-white px-10 pt-12 pb-16 rounded-b-[5rem] shadow-2xl relative">
+                        <div className="flex justify-between items-start mb-10 relative z-10">
                             <div>
-                                {company.logo ? <img src={company.logo} className="h-10 mb-4 object-contain brightness-0 invert" /> : <div className="h-10 w-10 bg-blue-600 rounded-2xl mb-4 flex items-center justify-center rotate-3"><i className="fa-solid fa-screwdriver-wrench"></i></div>}
-                                <h1 className="text-2xl font-black italic uppercase tracking-tighter leading-none">{company.name}</h1>
-                                <p className="text-[10px] font-bold text-blue-400 uppercase mt-1 tracking-widest opacity-80">{company.location}</p>
+                                {company.logo ? <img src={company.logo} className="h-10 mb-4 object-contain brightness-0 invert" /> : <div className="h-10 w-10 bg-blue-600 rounded-2xl mb-4 flex items-center justify-center rotate-3"><i className="fa-solid fa-wrench"></i></div>}
+                                <h1 className="text-2xl font-black uppercase tracking-tighter italic">{appTitle}</h1>
+                                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mt-1 opacity-80">{company.address || "Field Operations"}</p>
                             </div>
-                            <button onClick={() => setView('settings')} className="bg-white/10 h-12 w-12 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all border border-white/5"><i className="fa-solid fa-gear text-slate-400"></i></button>
+                            <button onClick={() => setView('settings')} className="bg-white/10 h-12 w-12 rounded-2xl flex items-center justify-center border border-white/5"><i className="fa-solid fa-gear text-slate-400"></i></button>
                         </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 relative z-10">
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 backdrop-blur-md">
-                                <p className="text-[10px] font-black text-slate-500 uppercase mb-1">Quotes</p>
-                                <p className="text-3xl font-black">{customers.filter(c => c.status === 'Estimate').length}</p>
+                                <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Leads</p>
+                                <p className="text-2xl font-black">{customers.filter(x => x.status === 'Estimate').length}</p>
                             </div>
                             <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 backdrop-blur-md">
-                                <p className="text-[10px] font-black text-slate-500 uppercase mb-1">Active Jobs</p>
-                                <p className="text-3xl font-black text-blue-400">{customers.filter(c => c.status === 'Active').length}</p>
+                                <p className="text-[9px] font-black text-slate-500 uppercase mb-1">Active</p>
+                                <p className="text-2xl font-black text-blue-400">{customers.filter(x => x.status === 'Active').length}</p>
                             </div>
                         </div>
                     </header>
 
                     <div className="px-6 -mt-10 relative z-20">
-                        <div className="bg-white/80 p-2 rounded-[3.5rem] shadow-2xl flex gap-1 border border-white/20 backdrop-blur-lg">
+                        <div className="bg-white p-2 rounded-[3.5rem] shadow-xl flex gap-1">
                             {['leads', 'active', 'paid'].map(t => (
-                                <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-4 rounded-[3rem] font-black text-[10px] uppercase transition-all ${activeTab === t ? 'bg-slate-900 text-white shadow-xl scale-[1.02]' : 'text-slate-400'}`}>
+                                <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-4 rounded-[3rem] font-black text-[10px] uppercase transition-all ${activeTab === t ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400'}`}>
                                     {t}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    <main className="px-6 mt-12 space-y-6 pb-40">
+                    <main className="px-6 mt-12 space-y-6">
                         {customers.filter(c => {
                             if (activeTab === 'leads') return c.status === 'Estimate';
                             if (activeTab === 'active') return c.status === 'Active';
                             return c.status === 'Paid';
                         }).map(c => (
-                            <div key={c.id} className="bg-white p-8 rounded-[4rem] border border-slate-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-transform">
+                            <div key={c.id} className="bg-white p-8 rounded-[4rem] border shadow-sm relative overflow-hidden transition-all active:scale-[0.98]">
                                 {c.isClockedIn && <div className="absolute top-0 right-0 left-0 h-1 bg-blue-500 animate-pulse"></div>}
-                                
                                 <div className="flex justify-between items-start mb-6">
                                     <div className="flex-1 pr-4">
                                         <h3 className="text-xl font-extrabold text-slate-900 leading-none mb-1 tracking-tight">{c.name}</h3>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{c.address || 'Field Visit'}</p>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase">{c.address || 'Field Visit'}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-2xl font-black text-blue-600 tracking-tighter">${parseFloat(c.total).toFixed(0)}</p>
-                                        {activeTab === 'active' && (
-                                            <p className={`text-[9px] font-black mt-1 uppercase ${c.isClockedIn ? 'text-blue-500 animate-pulse-soft' : 'text-slate-300'}`}>
-                                                {formatDuration(getTotalTimeMs(c))}
-                                            </p>
-                                        )}
+                                        <p className="text-2xl font-black text-blue-600 tracking-tighter">${parseFloat(c.total || 0).toFixed(0)}</p>
+                                        {activeTab === 'active' && <p className={`text-[9px] font-black mt-1 uppercase ${c.isClockedIn ? 'text-blue-500 animate-pulse' : 'text-slate-300'}`}>{formatDur(getMs(c))}</p>}
                                     </div>
                                 </div>
-                                
                                 <div className="flex gap-2">
-                                    <button onClick={() => { setSelectedCustomerId(c.id); setView('document'); }} className="flex-1 bg-slate-50 text-slate-700 py-5 rounded-[2.5rem] font-black text-[9px] uppercase tracking-widest">DOCS</button>
-                                    
-                                    {c.status === 'Estimate' && (
-                                        <button onClick={() => persistCustomers(customers.map(cust => cust.id === c.id ? {...cust, status: 'Active'} : cust))} className="flex-1 bg-slate-900 text-white py-5 rounded-[2.5rem] font-black text-[9px] uppercase tracking-widest">START</button>
-                                    )}
-
+                                    <button onClick={() => { setSelectedId(c.id); setView('document'); }} className="flex-1 bg-slate-50 text-slate-700 py-5 rounded-[2.5rem] font-black text-[9px] uppercase tracking-widest">Docs</button>
+                                    {c.status === 'Estimate' && <button onClick={() => persist(customers.map(x => x.id === c.id ? {...x, status: 'Active'} : x))} className="flex-1 bg-slate-900 text-white py-5 rounded-[2.5rem] font-black text-[9px] uppercase">Start</button>}
                                     {c.status === 'Active' && (
                                         <>
-                                            {c.isClockedIn ? (
-                                                <button onClick={() => clockOut(c.id)} className="flex-1 bg-red-500 text-white py-5 rounded-[2.5rem] font-black text-[9px] uppercase shadow-lg shadow-red-500/20">OUT</button>
-                                            ) : (
-                                                <button onClick={() => clockIn(c.id)} className="flex-1 bg-blue-600 text-white py-5 rounded-[2.5rem] font-black text-[9px] uppercase shadow-lg shadow-blue-500/20">IN</button>
-                                            )}
-                                            {!c.isClockedIn && (
-                                                <button onClick={() => persistCustomers(customers.map(cust => cust.id === c.id ? {...cust, status: 'Paid'} : cust))} className="px-6 bg-green-500 text-white rounded-[2.5rem]"><i className="fa-solid fa-check"></i></button>
-                                            )}
+                                            {c.isClockedIn ? <button onClick={() => clockOut(c.id)} className="flex-1 bg-red-500 text-white py-5 rounded-[2.5rem] font-black text-[9px] uppercase">Stop</button> : <button onClick={() => clockIn(c.id)} className="flex-1 bg-blue-600 text-white py-5 rounded-[2.5rem] font-black text-[9px] uppercase">In</button>}
+                                            {!c.isClockedIn && <button onClick={() => persist(customers.map(x => x.id === c.id ? {...x, status: 'Paid'} : x))} className="px-6 bg-green-500 text-white rounded-[2.5rem]"><i className="fa-solid fa-check"></i></button>}
                                         </>
                                     )}
                                 </div>
                             </div>
                         ))}
-                        {customers.filter(c => {
-                             if (activeTab === 'leads') return c.status === 'Estimate';
-                             if (activeTab === 'active') return c.status === 'Active';
-                             return c.status === 'Paid';
-                        }).length === 0 && (
-                            <div className="py-20 border-2 border-dashed rounded-[4rem] text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">No Records Found</div>
-                        )}
                     </main>
 
-                    <button onClick={() => setView('add-job')} className="fixed bottom-10 right-8 bg-blue-600 text-white h-20 w-20 rounded-[2.5rem] shadow-[0_20px_50px_rgba(37,99,235,0.4)] flex items-center justify-center z-50 border-4 border-white active:scale-95 transition-all">
+                    <button onClick={() => setView('add-job')} className="fixed bottom-10 right-8 bg-blue-600 text-white h-20 w-20 rounded-[2.5rem] shadow-2xl flex items-center justify-center z-50 border-4 border-white active:scale-95 transition-all">
                         <i className="fa-solid fa-plus text-3xl"></i>
                     </button>
-                </div>
-            );
-
-            // Routing
-            return (
-                <div className="max-w-xl mx-auto min-h-screen relative overflow-x-hidden">
-                    {view === 'dashboard' && <Dashboard />}
-                    {view === 'settings' && <SettingsView />}
-                    {view === 'add-job' && <AddJobView />}
-                    {view === 'document' && <DocumentView />}
                 </div>
             );
         }
