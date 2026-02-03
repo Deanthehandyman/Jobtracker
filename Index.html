@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dean's Handyman Service LLC</title>
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React and Babel to run the code in the browser -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -22,136 +19,215 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-        
-        // --- IMPORTANT: ADD YOUR FIREBASE CONFIG HERE ---
-        // Go to Firebase Console > Project Settings > General > Your Apps
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        const { useState, useEffect } = React;
 
-        // --- BUSINESS INFO ---
         const BUSINESS = {
             name: "Dean's Handyman Service LLC",
             phone: "281-917-9914",
             location: "Pittsburg, Texas",
             payment: {
-                square: "https://square.link/u/YOUR_LINK",
+                square: "https://square.link/u/DEAN_PAY",
                 paypal: "https://paypal.me/DeansHandyman",
                 venmo: "https://venmo.com/DeansHandyman"
             }
         };
 
-        // --- APP CODE ---
         function App() {
             const [view, setView] = useState('dashboard');
             const [activeTab, setActiveTab] = useState('leads');
             const [customers, setCustomers] = useState([]);
-            const [isModalOpen, setIsModalOpen] = useState(false);
             const [selectedCustomer, setSelectedCustomer] = useState(null);
-            
-            // Note: In a real GitHub environment, you would import Firebase SDKs here.
-            // For this single-file demo, we will simulate the data so you can see the UI.
-            // Once you have your Firebase keys, you can add the SDK scripts to the <head>.
-
+            const [isModalOpen, setIsModalOpen] = useState(false);
             const [formData, setFormData] = useState({
                 name: '', phone: '', email: '', address: '',
                 labor: '', materials: '', description: '',
                 status: 'Estimate', photos: []
             });
 
+            // Load data from phone storage
+            useEffect(() => {
+                const saved = localStorage.getItem('deans_handyman_data');
+                if (saved) setCustomers(JSON.parse(saved));
+            }, []);
+
+            // Save data to phone storage
+            const persist = (data) => {
+                setCustomers(data);
+                localStorage.setItem('deans_handyman_data', JSON.stringify(data));
+            };
+
             const handleSave = (e) => {
                 e.preventDefault();
                 const total = (parseFloat(formData.labor) || 0) + (parseFloat(formData.materials) || 0);
-                const newCust = { ...formData, id: Date.now(), total, createdAt: Date.now() };
-                setCustomers([newCust, ...customers]);
+                const newCust = { 
+                    ...formData, 
+                    id: Date.now().toString(), 
+                    total, 
+                    createdAt: Date.now() 
+                };
+                persist([newCust, ...customers]);
                 setIsModalOpen(false);
-                setFormData({ name: '', phone: '', email: '', address: '', labor: '', materials: '', description: '', status: 'Estimate', photos: [] });
+                resetForm();
             };
 
-            const sendDelivery = (customer, mode) => {
+            const resetForm = () => setFormData({
+                name: '', phone: '', email: '', address: '',
+                labor: '', materials: '', description: '',
+                status: 'Estimate', photos: []
+            });
+
+            const updateStatus = (id, status) => {
+                const updated = customers.map(c => c.id === id ? { ...c, status } : c);
+                persist(updated);
+            };
+
+            const sendDoc = (customer, mode) => {
                 const isEst = customer.status === 'Estimate';
-                const body = `${BUSINESS.name}\n${isEst ? 'ESTIMATE' : 'INVOICE'}\nTotal: $${customer.total}\nWork: ${customer.description}`;
+                const body = `${BUSINESS.name}\n${isEst ? 'ESTIMATE' : 'INVOICE'}\n----------------\nClient: ${customer.name}\nLabor: $${customer.labor}\nMaterials: $${customer.materials}\nTOTAL: $${customer.total}\n\nWork: ${customer.description}\n\n${!isEst ? `PAY VIA:\nSquare: ${BUSINESS.payment.square}\nVenmo: ${BUSINESS.payment.venmo}` : 'Reply to accept this quote.'}`;
+                
                 if (mode === 'email') {
-                    window.location.href = `mailto:${customer.email}?subject=Message from Dean&body=${encodeURIComponent(body)}`;
+                    window.location.href = `mailto:${customer.email}?subject=${isEst ? 'Estimate' : 'Invoice'} from Dean&body=${encodeURIComponent(body)}`;
                 } else {
                     window.location.href = `sms:${customer.phone}?body=${encodeURIComponent(body)}`;
                 }
             };
 
-            return (
-                <div className="min-h-screen max-w-md mx-auto bg-slate-50 pb-32 shadow-2xl">
-                    <header className="bg-slate-900 text-white p-8 rounded-b-[3rem] shadow-xl">
-                        <h1 className="text-xl font-black italic uppercase italic leading-none">DEAN'S HANDYMAN</h1>
-                        <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">{BUSINESS.location}</p>
-                        
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <div className="bg-white/5 p-4 rounded-3xl border border-white/10">
-                                <p className="text-[9px] text-slate-500 font-bold uppercase">Open Leads</p>
-                                <p className="text-2xl font-black">{customers.filter(c => c.status === 'Estimate').length}</p>
+            // Document View (The "PDF" look)
+            if (view === 'doc' && selectedCustomer) {
+                return (
+                    <div className="min-h-screen bg-white p-6 pb-32 animate-in fade-in">
+                        <button onClick={() => setView('dashboard')} className="text-slate-400 font-bold text-xs mb-8 uppercase tracking-widest">
+                            <i className="fa-solid fa-chevron-left mr-2"></i> Back
+                        </button>
+                        <div className="border-t-8 border-slate-900 pt-8">
+                            <h1 className="text-2xl font-black uppercase italic leading-none">{BUSINESS.name}</h1>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">{BUSINESS.location} • {BUSINESS.phone}</p>
+                            
+                            <div className="flex justify-between items-end mt-12 mb-8 border-b pb-8">
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Customer</p>
+                                    <p className="text-xl font-bold">{selectedCustomer.name}</p>
+                                    <p className="text-xs text-slate-500">{selectedCustomer.address}</p>
+                                </div>
+                                <div className="text-right">
+                                    <h2 className="text-4xl font-black text-slate-100 uppercase">{selectedCustomer.status}</h2>
+                                    <p className="text-[10px] font-bold text-slate-400">{new Date(selectedCustomer.createdAt).toLocaleDateString()}</p>
+                                </div>
                             </div>
-                            <div className="bg-white/5 p-4 rounded-3xl border border-white/10">
-                                <p className="text-[9px] text-slate-500 font-bold uppercase">Active</p>
-                                <p className="text-2xl font-black text-blue-400">{customers.filter(c => c.status === 'Active').length}</p>
+
+                            <div className="space-y-4 mb-10">
+                                <div className="flex justify-between text-sm font-bold border-b border-slate-50 pb-2">
+                                    <span className="text-slate-400 uppercase text-[10px]">Labor</span>
+                                    <span>${parseFloat(selectedCustomer.labor).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm font-bold border-b border-slate-50 pb-2">
+                                    <span className="text-slate-400 uppercase text-[10px]">Materials</span>
+                                    <span>${parseFloat(selectedCustomer.materials).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-3xl font-black pt-4 text-slate-900">
+                                    <span>TOTAL</span>
+                                    <span>${selectedCustomer.total.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            <div className="fixed bottom-6 left-6 right-6 flex gap-3">
+                                <button onClick={() => sendDoc(selectedCustomer, 'email')} className="flex-1 bg-slate-900 text-white py-5 rounded-[2rem] font-black text-xs uppercase flex items-center justify-center gap-2">
+                                    <i className="fa-solid fa-envelope"></i> Email
+                                </button>
+                                <button onClick={() => sendDoc(selectedCustomer, 'sms')} className="flex-1 bg-blue-600 text-white py-5 rounded-[2rem] font-black text-xs uppercase flex items-center justify-center gap-2">
+                                    <i className="fa-solid fa-message"></i> Text
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen pb-32">
+                    <header className="bg-slate-900 text-white p-10 rounded-b-[4rem] shadow-2xl relative overflow-hidden">
+                        <h1 className="text-2xl font-black italic tracking-tighter leading-none mb-1 uppercase">DEAN'S HANDYMAN</h1>
+                        <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Pittsburg, Texas • LLC</p>
+                        <div className="grid grid-cols-2 gap-4 mt-8">
+                            <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 backdrop-blur-md text-center">
+                                <p className="text-[10px] font-black text-slate-500 uppercase mb-1">Open</p>
+                                <p className="text-3xl font-black">{customers.filter(c => c.status === 'Estimate').length}</p>
+                            </div>
+                            <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/10 backdrop-blur-md text-center">
+                                <p className="text-[10px] font-black text-slate-500 uppercase mb-1">Active</p>
+                                <p className="text-3xl font-black text-blue-400">{customers.filter(c => c.status === 'Active').length}</p>
                             </div>
                         </div>
                     </header>
 
-                    <div className="px-6 -mt-6">
-                        <div className="bg-white p-2 rounded-[2rem] shadow-lg flex gap-1">
+                    <div className="px-6 -mt-8 relative z-20">
+                        <div className="bg-white p-2 rounded-[3rem] shadow-xl flex gap-1">
                             {['leads', 'active', 'paid'].map(t => (
-                                <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-3 rounded-[1.8rem] font-bold text-[10px] uppercase ${activeTab === t ? 'bg-slate-900 text-white' : 'text-slate-400'}`}>
+                                <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-4 rounded-[2.5rem] font-black text-[10px] uppercase transition-all ${activeTab === t ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400'}`}>
                                     {t}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    <main className="p-6">
+                    <main className="px-6 mt-10 space-y-4">
                         {customers.filter(c => {
                             if (activeTab === 'leads') return c.status === 'Estimate';
                             if (activeTab === 'active') return c.status === 'Active';
                             return c.status === 'Paid';
                         }).map(c => (
-                            <div key={c.id} className="bg-white p-6 rounded-[2.5rem] mb-4 border border-slate-100 shadow-sm">
+                            <div key={c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
                                 <div className="flex justify-between items-start mb-4">
-                                    <h3 className="font-bold text-lg">{c.name}</h3>
-                                    <p className="font-black text-blue-600">${c.total}</p>
+                                    <h3 className="text-lg font-black leading-none">{c.name}</h3>
+                                    <p className="text-xl font-black text-blue-600">${c.total.toFixed(0)}</p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={() => { setSelectedCustomer(c); setView('invoice'); }} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold text-[10px] uppercase">View Doc</button>
-                                    <button onClick={() => sendDelivery(c, 'sms')} className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold text-[10px] uppercase">Text</button>
+                                    <button onClick={() => { setSelectedCustomer(c); setView('doc'); }} className="flex-1 bg-slate-50 text-slate-700 py-4 rounded-2xl font-black text-[10px] uppercase">
+                                        View Doc
+                                    </button>
+                                    {c.status === 'Estimate' && (
+                                        <button onClick={() => updateStatus(c.id, 'Active')} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase">
+                                            Start Job
+                                        </button>
+                                    )}
+                                    {c.status === 'Active' && (
+                                        <button onClick={() => updateStatus(c.id, 'Paid')} className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase">
+                                            Mark Paid
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
                     </main>
 
-                    <button onClick={() => setIsModalOpen(true)} className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-blue-600 text-white h-16 w-16 rounded-full shadow-2xl flex items-center justify-center z-50 border-4 border-white active:scale-90 transition-transform">
-                        <span className="text-3xl font-bold">+</span>
+                    <button onClick={() => setIsModalOpen(true)} className="fixed bottom-10 right-8 bg-blue-600 text-white h-20 w-20 rounded-[2.5rem] shadow-2xl flex items-center justify-center z-50 border-4 border-white active:scale-95 transition-all">
+                        <span className="text-4xl font-bold">+</span>
                     </button>
 
                     {isModalOpen && (
-                        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[100] flex items-end p-4">
-                            <div className="bg-white w-full rounded-[3rem] p-8 max-h-[90vh] overflow-y-auto">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-xl font-black uppercase">New Lead</h2>
-                                    <button onClick={() => setIsModalOpen(false)} className="text-slate-400">✕</button>
+                        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[100] flex items-end justify-center p-4">
+                            <div className="bg-white w-full max-w-xl rounded-[3.5rem] p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h2 className="text-2xl font-black uppercase">New Lead</h2>
+                                    <button onClick={() => setIsModalOpen(false)} className="text-slate-300">✕</button>
                                 </div>
                                 <form onSubmit={handleSave} className="space-y-4">
-                                    <input required placeholder="Client Name" className="w-full p-5 bg-slate-50 rounded-2xl outline-none" onChange={e => setFormData({...formData, name: e.target.value})} />
-                                    <input required placeholder="Phone" className="w-full p-5 bg-slate-50 rounded-2xl outline-none" onChange={e => setFormData({...formData, phone: e.target.value})} />
-                                    <input required placeholder="Email" type="email" className="w-full p-5 bg-slate-50 rounded-2xl outline-none" onChange={e => setFormData({...formData, email: e.target.value})} />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <input type="number" placeholder="Labor $" className="p-5 bg-slate-100 rounded-2xl outline-none" onChange={e => setFormData({...formData, labor: e.target.value})} />
-                                        <input type="number" placeholder="Materials $" className="p-5 bg-slate-100 rounded-2xl outline-none" onChange={e => setFormData({...formData, materials: e.target.value})} />
+                                    <input required placeholder="Client Name" className="w-full p-6 bg-slate-50 rounded-3xl font-bold border-0" onChange={e => setFormData({...formData, name: e.target.value})} />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <input required placeholder="Phone" className="p-6 bg-slate-50 rounded-3xl font-bold border-0" onChange={e => setFormData({...formData, phone: e.target.value})} />
+                                        <input required placeholder="Email" type="email" className="p-6 bg-slate-50 rounded-3xl font-bold border-0" onChange={e => setFormData({...formData, email: e.target.value})} />
                                     </div>
-                                    <textarea placeholder="Description" className="w-full p-5 bg-slate-50 rounded-2xl outline-none" onChange={e => setFormData({...formData, description: e.target.value})} />
-                                    <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest">Generate Quote</button>
+                                    <input placeholder="Job Site Address" className="w-full p-6 bg-slate-50 rounded-3xl font-bold border-0" onChange={e => setFormData({...formData, address: e.target.value})} />
+                                    <div className="grid grid-cols-2 gap-3 border-t pt-6">
+                                        <input type="number" placeholder="Labor $" className="p-6 bg-slate-100 rounded-3xl font-black" onChange={e => setFormData({...formData, labor: e.target.value})} />
+                                        <input type="number" placeholder="Materials $" className="p-6 bg-slate-100 rounded-3xl font-black" onChange={e => setFormData({...formData, materials: e.target.value})} />
+                                    </div>
+                                    <textarea rows="3" placeholder="Job Scope" className="w-full p-6 bg-slate-50 rounded-3xl font-bold border-0" onChange={e => setFormData({...formData, description: e.target.value})} />
+                                    <div className="bg-slate-900 p-8 rounded-[3rem] text-center text-white">
+                                        <p className="text-[10px] text-blue-400 font-black uppercase mb-1">Total</p>
+                                        <p className="text-4xl font-black">${((parseFloat(formData.labor) || 0) + (parseFloat(formData.materials) || 0)).toFixed(2)}</p>
+                                    </div>
+                                    <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[2.5rem] font-black text-xl uppercase tracking-widest">Generate Quote</button>
                                 </form>
                             </div>
                         </div>
